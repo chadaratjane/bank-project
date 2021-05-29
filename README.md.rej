@@ -1,0 +1,6 @@
+diff a/README.md b/README.md	(rejected hunks)
+@@ -1 +0,2 @@
+-# bank-project
+\ No newline at end of file
++# bank-project
++bank project for Spring boot
