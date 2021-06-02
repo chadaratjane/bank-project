@@ -1,12 +1,20 @@
 package com.demo.bank.model.request;
 
+import javax.validation.constraints.NotBlank;
 import java.util.Date;
 
-public class BankRequestOpenBankAccount {
+public class OpenBankAccountRequest {
 
+    @NotBlank (message = "name is in valid")
     private String name;
+
+    @NotBlank (message = "address is invalid")
     private String address;
+
+    @NotBlank (message = "date is in valid, correct format is YYYY-MM-DD")
     private Date dateOfBirth;
+
+    @NotBlank (message = "branchName is in valid")
     private String branchName;
 
     public String getName() {
