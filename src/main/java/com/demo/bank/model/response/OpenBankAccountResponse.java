@@ -2,7 +2,7 @@ package com.demo.bank.model.response;
 
 import java.util.UUID;
 
-public class BankResponseOpenBankAccount {
+public class OpenBankAccountResponse {
 
     private String accountName;
     private String accountNumber;

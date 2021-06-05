@@ -2,7 +2,7 @@ package com.demo.bank.model.request;
 
 import java.math.BigDecimal;
 
-public class BankRequestDepositWithdrawTransaction {
+public class BankTransactionRequest {
     String accountName;
     String accountNumber;
     BigDecimal amount;

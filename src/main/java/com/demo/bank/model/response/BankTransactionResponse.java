@@ -3,7 +3,7 @@ package com.demo.bank.model.response;
 import java.math.BigDecimal;
 import java.util.Date;
 
-public class BankResponseDepositWithdrawTransaction {
+public class BankTransactionResponse {
     String accountName;
     String accountNumber;
     BigDecimal amount;

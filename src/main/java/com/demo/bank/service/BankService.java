@@ -3,13 +3,15 @@ package com.demo.bank.service;
 import com.demo.bank.constant.Status;
 import com.demo.bank.model.entity.BankAccountsEntity;
 import com.demo.bank.model.entity.BankBranchesEntity;
+import com.demo.bank.model.entity.CustomerInformationEntity;
 import com.demo.bank.model.request.OpenBankAccountRequest;
-import com.demo.bank.model.response.BankResponseOpenBankAccount;
+import com.demo.bank.model.response.OpenBankAccountResponse;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.repository.BankAccountsRepository;
 import com.demo.bank.repository.BankBranchesRepository;
 import com.demo.bank.repository.BankTransactionsRepository;
+import com.demo.bank.repository.CustomerInformationRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,11 +35,14 @@ public class BankService {
     private BankAccountsRepository bankAccountsRepository;
     @Autowired
     private BankTransactionsRepository bankTransactionsRepository;
+    @Autowired
+    private CustomerInformationRepository customerInformationRepository;
 
-    public CommonResponse openBankAccount(OpenBankAccountRequest request){
-        CommonResponse commonResponse = new CommonResponse();
+    public CommonResponse openBankAccount(OpenBankAccountRequest request) {
         BankBranchesEntity findBranch = bankBranchesRepository.findAllByBranchName(request.getBranchName());
-        if (findBranch!=null) {
+        CommonResponse commonResponse = new CommonResponse();
+
+        if (findBranch != null) {
             logger.info("BRANCH FOUND");
             String accountNumber;
             while (true) {
@@ -54,14 +59,24 @@ public class BankService {
             if (saveResult != null) {
                 logger.info("OPEN BANK ACCOUNT SUCCESSFULLY");
                 commonResponse.setStatus(Status.SUCCESS.getValue());
-                BankResponseOpenBankAccount responseOpenBankAccount = new BankResponseOpenBankAccount();
+                OpenBankAccountResponse responseOpenBankAccount = new OpenBankAccountResponse();
                 responseOpenBankAccount.setAccountName(saveResult.getAccountName());
                 responseOpenBankAccount.setAccountNumber(saveResult.getAccountNumber());
                 responseOpenBankAccount.setBranchId(saveResult.getAccountBranchId());
                 responseOpenBankAccount.setBranchName(findBranch.getBranchName());
                 commonResponse.setData(responseOpenBankAccount);
                 commonResponse.setHttpStatus(HttpStatus.CREATED);
-            }else{
+
+                CustomerInformationEntity customerInformationEntity = new CustomerInformationEntity();
+                logger.info("SAVE CUSTOMER INFORMATION SUCCESSFULLY");
+                UUID id = UUID.randomUUID();
+                customerInformationEntity.setCustomerId(id);
+                customerInformationEntity.setCustomerName(saveResult.getAccountName());
+                customerInformationEntity.setCustomerDateOfBirth(request.getDateOfBirth());
+                customerInformationEntity.setCustomerAddress(request.getAddress());
+                customerInformationRepository.save(customerInformationEntity);
+
+            } else {
                 logger.error("OPEN BANK ACCOUNT UNSUCCESSFULLY");
                 commonResponse.setStatus(Status.ERROR.getValue());
                 ErrorResponse errorResponse = new ErrorResponse();
@@ -69,7 +84,7 @@ public class BankService {
                 commonResponse.setData(errorResponse);
                 commonResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
             }
-        }else{
+        } else {
             logger.error("BRANCH NOT FOUND");
             commonResponse.setStatus(Status.NOT_FOUND.getValue());
             ErrorResponse errorResponse = new ErrorResponse();
