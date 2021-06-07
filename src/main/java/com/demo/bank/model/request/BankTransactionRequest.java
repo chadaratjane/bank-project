@@ -1,11 +1,30 @@
 package com.demo.bank.model.request;
 
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Digits;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.math.BigDecimal;
 
 public class BankTransactionRequest {
-    String accountName;
-    String accountNumber;
-    BigDecimal amount;
+
+    @NotBlank(message = "accountName is invalid")
+    @Pattern(regexp="^[A-Za-z- ]*$",message = "accountName is invalid,please input alphabet")
+    private String accountName;
+
+    @NotBlank(message = "accountNumber is invalid")
+    @Pattern(regexp = "^[0-9]*$", message = "accountNumber is invalid,please input number")
+    private String accountNumber;
+
+    @NotNull(message = "amount is invalid")
+    @DecimalMin(value = "0.0", inclusive = false,
+            message = "amount is invalid,please input positive amount")
+    @Digits(integer = 6, fraction = 2,
+            message = "amount is invalid,please input not more than 6 digits with 2 decimal places")
+    private BigDecimal amount;
+
 
     public String getAccountName() {
         return accountName;

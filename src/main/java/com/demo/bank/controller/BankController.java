@@ -1,5 +1,6 @@
 package com.demo.bank.controller;
 
+import com.demo.bank.model.request.BankTransactionRequest;
 import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.service.BankService;
@@ -28,6 +29,16 @@ public class BankController {
         logger.info("END IMPLEMENTING OPEN BANK ACCOUNT, response : {}", commonResponse);
         return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
+
+    @PostMapping(value = "/transaction/deposit", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CommonResponse> depositTransaction(@Valid @RequestBody BankTransactionRequest request) {
+        logger.info("START IMPLEMENTING DEPOSIT TRANSACTION, transactionAmount : {}", request.getAmount());
+        CommonResponse commonResponse = bankService.depositTransaction(request);
+        logger.info("END IMPLEMENTING DEPOSIT TRANSACTION, response : {}",commonResponse);
+        return new ResponseEntity<>(commonResponse, commonResponse.getHttpStatus());
+    }
+
+
     }
 
 

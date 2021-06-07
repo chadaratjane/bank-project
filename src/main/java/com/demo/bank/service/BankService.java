@@ -3,8 +3,11 @@ package com.demo.bank.service;
 import com.demo.bank.constant.Status;
 import com.demo.bank.model.entity.BankAccountsEntity;
 import com.demo.bank.model.entity.BankBranchesEntity;
+import com.demo.bank.model.entity.BankTransactionsEntity;
 import com.demo.bank.model.entity.CustomerInformationEntity;
+import com.demo.bank.model.request.BankTransactionRequest;
 import com.demo.bank.model.request.OpenBankAccountRequest;
+import com.demo.bank.model.response.BankTransactionResponse;
 import com.demo.bank.model.response.OpenBankAccountResponse;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
@@ -14,14 +17,17 @@ import com.demo.bank.repository.BankTransactionsRepository;
 import com.demo.bank.repository.CustomerInformationRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.type.descriptor.java.CalendarTypeDescriptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
+import java.util.TimeZone;
 import java.util.UUID;
 
 @Service
@@ -94,6 +100,58 @@ public class BankService {
         }
         return commonResponse;
     }
+
+    public CommonResponse depositTransaction(BankTransactionRequest request){
+        BankAccountsEntity findAccountNumber = bankAccountsRepository.findAllByAccountNumber(request.getAccountNumber());
+        CommonResponse commonResponse = new CommonResponse();
+        if (findAccountNumber != null) {
+            logger.info("ACCOUNT NUMBER FOUND");
+            Date date = Calendar.getInstance().getTime();
+            BankTransactionsEntity bankTransactionsEntity = prepareDepositTransactionsEntity(request, findAccountNumber,date);
+
+            BankTransactionsEntity saveResult = bankTransactionsRepository.save(bankTransactionsEntity);
+
+            if (saveResult !=null){
+                logger.info("DEPOSIT TRANSACTION SUCCESSFULLY");
+                commonResponse.setStatus(Status.SUCCESS.getValue());
+                BankTransactionResponse bankTransactionResponse = new BankTransactionResponse();
+                bankTransactionResponse.setAccountName(findAccountNumber.getAccountName());
+                bankTransactionResponse.setAccountNumber(findAccountNumber.getAccountNumber());
+                bankTransactionResponse.setAmount(saveResult.getTransactionAmount());
+                BigDecimal accountBalance = findAccountNumber.getAccountBalance();
+                BigDecimal updatedAccountBalance = accountBalance.add(request.getAmount());
+                bankTransactionResponse.setAccountBalance(updatedAccountBalance);
+                bankTransactionResponse.setTransactionDate(saveResult.getTransactionDate());
+                commonResponse.setData(bankTransactionResponse);
+                commonResponse.setHttpStatus(HttpStatus.CREATED);
+
+                logger.info("UPDATE BANK ACCOUNT SUCCESSFULLY");
+                BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+                bankAccountsEntity.setAccountId(findAccountNumber.getAccountId());
+                bankAccountsEntity.setAccountBranchId(findAccountNumber.getAccountBranchId());
+                bankAccountsEntity.setAccountNumber(findAccountNumber.getAccountNumber());
+                bankAccountsEntity.setAccountName(findAccountNumber.getAccountName());
+                bankAccountsEntity.setAccountBalance(updatedAccountBalance);
+                bankAccountsEntity.setAccountStatus(findAccountNumber.getAccountStatus());
+                bankAccountsEntity.setAccountCreatedDate(findAccountNumber.getAccountCreatedDate());
+                bankAccountsEntity.setAccountUpdatedDate(Calendar.getInstance().getTime());
+                bankAccountsRepository.save(bankAccountsEntity);
+            }
+        }
+        return commonResponse;
+    }
+
+    private BankTransactionsEntity prepareDepositTransactionsEntity(BankTransactionRequest request, BankAccountsEntity findAccountNumber,Date date) {
+        BankTransactionsEntity bankTransactionsEntity = new BankTransactionsEntity();
+        UUID id = UUID.randomUUID();
+        bankTransactionsEntity.setTransactionId(id);
+        bankTransactionsEntity.setAccountId(findAccountNumber.getAccountId());
+        bankTransactionsEntity.setTransactionAmount(request.getAmount());
+        bankTransactionsEntity.setTransactionType("DEPOSIT");
+        bankTransactionsEntity.setTransactionDate(date);
+        return bankTransactionsEntity;
+    }
+
 
     private BankAccountsEntity prepareBankAccountsEntity(OpenBankAccountRequest request, Integer branchId, String accountNumber) {
         BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
