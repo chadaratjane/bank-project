@@ -52,12 +52,13 @@ public class BankTransactionResponse {
 
     @Override
     public String toString() {
-        return "BankResponseDepositWithdrawTransaction{" +
+        return "BankTransactionResponse{" +
                 "accountName='" + accountName + '\'' +
-                ", accountNumber='" + accountNumber + '\'' +
+                ", accountNumber='" + "XXXXX" + accountNumber.substring(5,10)+ '\'' +
                 ", amount=" + amount +
                 ", accountBalance=" + accountBalance +
                 ", transactionDate=" + transactionDate +
                 '}';
     }
 }
+

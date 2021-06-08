@@ -3,7 +3,6 @@ package com.demo.bank.model.request;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import java.math.BigDecimal;
@@ -11,18 +10,18 @@ import java.math.BigDecimal;
 public class BankTransactionRequest {
 
     @NotBlank(message = "accountName is invalid")
-    @Pattern(regexp="^[A-Za-z- ]*$",message = "accountName is invalid,please input alphabet")
+    @Pattern(regexp="^[A-Za-z ]*$",message = "accountName is invalid,please input alphabet")
     private String accountName;
 
     @NotBlank(message = "accountNumber is invalid")
-    @Pattern(regexp = "^[0-9]*$", message = "accountNumber is invalid,please input number")
+    @Pattern(regexp = "^[0-9]{10}$", message = "accountNumber is invalid,please input number with 10 digit numbers")
     private String accountNumber;
 
     @NotNull(message = "amount is invalid")
     @DecimalMin(value = "0.0", inclusive = false,
             message = "amount is invalid,please input positive amount")
-    @Digits(integer = 6, fraction = 2,
-            message = "amount is invalid,please input not more than 6 digits with 2 decimal places")
+    @Digits(integer = 10, fraction = 2,
+            message = "amount is invalid,please input not more than 10 digits with 2 decimal places")
     private BigDecimal amount;
 
 
@@ -54,7 +53,7 @@ public class BankTransactionRequest {
     public String toString() {
         return "BankResponseDepositWithdrawTransaction{" +
                 "accountName='" + accountName + '\'' +
-                ", accountNumber='" + accountNumber + '\'' +
+                ", accountNumber='" + "XXXXX" + accountNumber.substring(5,10)+ '\'' +
                 ", amount=" + amount +
                 '}';
     }

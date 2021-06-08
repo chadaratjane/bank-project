@@ -17,17 +17,14 @@ import com.demo.bank.repository.BankTransactionsRepository;
 import com.demo.bank.repository.CustomerInformationRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hibernate.type.descriptor.java.CalendarTypeDescriptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
-import java.util.TimeZone;
 import java.util.UUID;
 
 @Service
@@ -60,36 +57,27 @@ public class BankService {
             }
             BankAccountsEntity bankAccountsEntity = prepareBankAccountsEntity(request, findBranch.getBranchId(), accountNumber);
 
-            BankAccountsEntity saveResult = bankAccountsRepository.save(bankAccountsEntity);
+            BankAccountsEntity saveEntity = bankAccountsRepository.save(bankAccountsEntity);
 
-            if (saveResult != null) {
-                logger.info("OPEN BANK ACCOUNT SUCCESSFULLY");
-                commonResponse.setStatus(Status.SUCCESS.getValue());
-                OpenBankAccountResponse responseOpenBankAccount = new OpenBankAccountResponse();
-                responseOpenBankAccount.setAccountName(saveResult.getAccountName());
-                responseOpenBankAccount.setAccountNumber(saveResult.getAccountNumber());
-                responseOpenBankAccount.setBranchId(saveResult.getAccountBranchId());
-                responseOpenBankAccount.setBranchName(findBranch.getBranchName());
-                commonResponse.setData(responseOpenBankAccount);
-                commonResponse.setHttpStatus(HttpStatus.CREATED);
+            logger.info("OPEN BANK ACCOUNT SUCCESSFULLY");
+            commonResponse.setStatus(Status.SUCCESS.getValue());
+            OpenBankAccountResponse responseOpenBankAccount = new OpenBankAccountResponse();
+            responseOpenBankAccount.setAccountName(saveEntity.getAccountName());
+            responseOpenBankAccount.setAccountNumber(saveEntity.getAccountNumber());
+            responseOpenBankAccount.setBranchId(saveEntity.getAccountBranchId());
+            responseOpenBankAccount.setBranchName(findBranch.getBranchName());
+            commonResponse.setData(responseOpenBankAccount);
+            commonResponse.setHttpStatus(HttpStatus.CREATED);
 
-                CustomerInformationEntity customerInformationEntity = new CustomerInformationEntity();
-                logger.info("SAVE CUSTOMER INFORMATION SUCCESSFULLY");
-                UUID id = UUID.randomUUID();
-                customerInformationEntity.setCustomerId(id);
-                customerInformationEntity.setCustomerName(saveResult.getAccountName());
-                customerInformationEntity.setCustomerDateOfBirth(request.getDateOfBirth());
-                customerInformationEntity.setCustomerAddress(request.getAddress());
-                customerInformationRepository.save(customerInformationEntity);
+            CustomerInformationEntity customerInformationEntity = new CustomerInformationEntity();
+            logger.info("SAVE CUSTOMER INFORMATION SUCCESSFULLY");
+            UUID id = UUID.randomUUID();
+            customerInformationEntity.setCustomerId(id);
+            customerInformationEntity.setCustomerName(saveEntity.getAccountName());
+            customerInformationEntity.setCustomerDateOfBirth(request.getDateOfBirth());
+            customerInformationEntity.setCustomerAddress(request.getAddress());
+            customerInformationRepository.save(customerInformationEntity);
 
-            } else {
-                logger.error("OPEN BANK ACCOUNT UNSUCCESSFULLY");
-                commonResponse.setStatus(Status.ERROR.getValue());
-                ErrorResponse errorResponse = new ErrorResponse();
-                errorResponse.setError("OPEN BANK ACCOUNT UNSUCCESSFULLY");
-                commonResponse.setData(errorResponse);
-                commonResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
         } else {
             logger.error("BRANCH NOT FOUND");
             commonResponse.setStatus(Status.NOT_FOUND.getValue());
@@ -101,53 +89,114 @@ public class BankService {
         return commonResponse;
     }
 
-    public CommonResponse depositTransaction(BankTransactionRequest request){
-        BankAccountsEntity findAccountNumber = bankAccountsRepository.findAllByAccountNumber(request.getAccountNumber());
+    public CommonResponse depositTransaction(BankTransactionRequest request) {
+        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getAccountNumber(), "ACTIVATED");
         CommonResponse commonResponse = new CommonResponse();
-        if (findAccountNumber != null) {
-            logger.info("ACCOUNT NUMBER FOUND");
-            Date date = Calendar.getInstance().getTime();
-            BankTransactionsEntity bankTransactionsEntity = prepareDepositTransactionsEntity(request, findAccountNumber,date);
+        if (bankAccountsEntity != null) {
+            logger.info("BANK ACCOUNT FOUND");
+            BankTransactionsEntity bankTransactionsEntity = prepareDepositTransactionsEntity(request, bankAccountsEntity);
 
-            BankTransactionsEntity saveResult = bankTransactionsRepository.save(bankTransactionsEntity);
+            BankTransactionsEntity saveEntity = bankTransactionsRepository.save(bankTransactionsEntity);
 
-            if (saveResult !=null){
-                logger.info("DEPOSIT TRANSACTION SUCCESSFULLY");
-                commonResponse.setStatus(Status.SUCCESS.getValue());
-                BankTransactionResponse bankTransactionResponse = new BankTransactionResponse();
-                bankTransactionResponse.setAccountName(findAccountNumber.getAccountName());
-                bankTransactionResponse.setAccountNumber(findAccountNumber.getAccountNumber());
-                bankTransactionResponse.setAmount(saveResult.getTransactionAmount());
-                BigDecimal accountBalance = findAccountNumber.getAccountBalance();
-                BigDecimal updatedAccountBalance = accountBalance.add(request.getAmount());
-                bankTransactionResponse.setAccountBalance(updatedAccountBalance);
-                bankTransactionResponse.setTransactionDate(saveResult.getTransactionDate());
-                commonResponse.setData(bankTransactionResponse);
-                commonResponse.setHttpStatus(HttpStatus.CREATED);
+            logger.info("DEPOSIT TRANSACTION SUCCESSFULLY");
+            commonResponse.setStatus(Status.SUCCESS.getValue());
+            BankTransactionResponse bankTransactionResponse = new BankTransactionResponse();
+            bankTransactionResponse.setAccountName(bankAccountsEntity.getAccountName());
+            bankTransactionResponse.setAccountNumber(bankAccountsEntity.getAccountNumber());
+            bankTransactionResponse.setAmount(saveEntity.getTransactionAmount());
+            BigDecimal accountBalance = bankAccountsEntity.getAccountBalance();
+            BigDecimal updatedAccountBalance = accountBalance.add(request.getAmount());
+            bankTransactionResponse.setAccountBalance(updatedAccountBalance);
+            //TODO **fix time** is not Thailand Time in postman response
+            bankTransactionResponse.setTransactionDate(saveEntity.getTransactionDate());
+            commonResponse.setData(bankTransactionResponse);
+            commonResponse.setHttpStatus(HttpStatus.CREATED);
 
-                logger.info("UPDATE BANK ACCOUNT SUCCESSFULLY");
-                BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
-                bankAccountsEntity.setAccountId(findAccountNumber.getAccountId());
-                bankAccountsEntity.setAccountBranchId(findAccountNumber.getAccountBranchId());
-                bankAccountsEntity.setAccountNumber(findAccountNumber.getAccountNumber());
-                bankAccountsEntity.setAccountName(findAccountNumber.getAccountName());
-                bankAccountsEntity.setAccountBalance(updatedAccountBalance);
-                bankAccountsEntity.setAccountStatus(findAccountNumber.getAccountStatus());
-                bankAccountsEntity.setAccountCreatedDate(findAccountNumber.getAccountCreatedDate());
-                bankAccountsEntity.setAccountUpdatedDate(Calendar.getInstance().getTime());
-                bankAccountsRepository.save(bankAccountsEntity);
-            }
+            bankAccountsRepository.save(updateBankAccountsEntity(bankAccountsEntity, updatedAccountBalance));
+            logger.info("UPDATE BANK ACCOUNT SUCCESSFULLY");
+
+        } else {
+            logger.error("BANK ACCOUNT NOT FOUND");
+            commonResponse.setStatus(Status.NOT_FOUND.getValue());
+            ErrorResponse errorResponse = new ErrorResponse();
+            errorResponse.setError("BANK ACCOUNT NOT FOUND");
+            commonResponse.setData(errorResponse);
+            commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
         }
         return commonResponse;
     }
 
-    private BankTransactionsEntity prepareDepositTransactionsEntity(BankTransactionRequest request, BankAccountsEntity findAccountNumber,Date date) {
+    public CommonResponse withdrawTransaction(BankTransactionRequest request) {
+        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getAccountNumber(), "ACTIVATED");
+        CommonResponse commonResponse = new CommonResponse();
+        if (bankAccountsEntity != null) {
+            logger.info("BANK ACCOUNT FOUND");
+            BankTransactionsEntity bankTransactionsEntity = prepareWithdrawTransactionEntity(request, bankAccountsEntity);
+
+            BankTransactionsEntity saveEntity = bankTransactionsRepository.save(bankTransactionsEntity);
+
+            logger.info("WITHDRAW TRANSACTION SUCCESSFULLY");
+            commonResponse.setStatus(Status.SUCCESS.getValue());
+            BankTransactionResponse bankTransactionResponse = new BankTransactionResponse();
+            bankTransactionResponse.setAccountName(bankAccountsEntity.getAccountName());
+            bankTransactionResponse.setAccountNumber(bankAccountsEntity.getAccountNumber());
+            bankTransactionResponse.setAmount(saveEntity.getTransactionAmount());
+            BigDecimal accountBalance = bankAccountsEntity.getAccountBalance();
+            BigDecimal updatedAccountBalance = accountBalance.subtract(request.getAmount());
+            bankTransactionResponse.setAccountBalance(updatedAccountBalance);
+            //TODO **fix time** is not Thailand Time in postman response
+            bankTransactionResponse.setTransactionDate(saveEntity.getTransactionDate());
+            commonResponse.setData(bankTransactionResponse);
+            commonResponse.setHttpStatus(HttpStatus.CREATED);
+
+            bankAccountsRepository.save(updateBankAccountsEntity(bankAccountsEntity, updatedAccountBalance));
+            logger.info("UPDATE BANK ACCOUNT SUCCESSFULLY");
+
+        }else {
+            logger.error("BANK ACCOUNT NOT FOUND");
+            commonResponse.setStatus(Status.NOT_FOUND.getValue());
+            ErrorResponse errorResponse = new ErrorResponse();
+            errorResponse.setError("BANK ACCOUNT NOT FOUND");
+            commonResponse.setData(errorResponse);
+            commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
+        }
+
+        return commonResponse;
+    }
+
+    private BankTransactionsEntity prepareWithdrawTransactionEntity(BankTransactionRequest request, BankAccountsEntity bankAccountsEntity) {
         BankTransactionsEntity bankTransactionsEntity = new BankTransactionsEntity();
         UUID id = UUID.randomUUID();
         bankTransactionsEntity.setTransactionId(id);
-        bankTransactionsEntity.setAccountId(findAccountNumber.getAccountId());
+        bankTransactionsEntity.setAccountId(bankAccountsEntity.getAccountId());
+        bankTransactionsEntity.setTransactionAmount(request.getAmount());
+        bankTransactionsEntity.setTransactionType("WITHDRAW");
+        Date date = Calendar.getInstance().getTime();
+        bankTransactionsEntity.setTransactionDate(date);
+        return bankTransactionsEntity;
+    }
+
+    private BankAccountsEntity updateBankAccountsEntity(BankAccountsEntity accountsEntity, BigDecimal updatedAccountBalance) {
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(accountsEntity.getAccountId());
+        bankAccountsEntity.setAccountBranchId(accountsEntity.getAccountBranchId());
+        bankAccountsEntity.setAccountNumber(accountsEntity.getAccountNumber());
+        bankAccountsEntity.setAccountName(accountsEntity.getAccountName());
+        bankAccountsEntity.setAccountBalance(updatedAccountBalance);
+        bankAccountsEntity.setAccountStatus(accountsEntity.getAccountStatus());
+        bankAccountsEntity.setAccountCreatedDate(accountsEntity.getAccountCreatedDate());
+        bankAccountsEntity.setAccountUpdatedDate(Calendar.getInstance().getTime());
+        return bankAccountsEntity;
+    }
+
+    private BankTransactionsEntity prepareDepositTransactionsEntity(BankTransactionRequest request, BankAccountsEntity bankAccountsEntity) {
+        BankTransactionsEntity bankTransactionsEntity = new BankTransactionsEntity();
+        UUID id = UUID.randomUUID();
+        bankTransactionsEntity.setTransactionId(id);
+        bankTransactionsEntity.setAccountId(bankAccountsEntity.getAccountId());
         bankTransactionsEntity.setTransactionAmount(request.getAmount());
         bankTransactionsEntity.setTransactionType("DEPOSIT");
+        Date date = Calendar.getInstance().getTime();
         bankTransactionsEntity.setTransactionDate(date);
         return bankTransactionsEntity;
     }

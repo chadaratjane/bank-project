@@ -32,12 +32,19 @@ public class BankController {
 
     @PostMapping(value = "/transaction/deposit", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> depositTransaction(@Valid @RequestBody BankTransactionRequest request) {
-        logger.info("START IMPLEMENTING DEPOSIT TRANSACTION, transactionAmount : {}", request.getAmount());
+        logger.info("START IMPLEMENTING DEPOSIT TRANSACTION, transactionRequest : {}", request);
         CommonResponse commonResponse = bankService.depositTransaction(request);
         logger.info("END IMPLEMENTING DEPOSIT TRANSACTION, response : {}",commonResponse);
-        return new ResponseEntity<>(commonResponse, commonResponse.getHttpStatus());
+        return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
 
+    @PostMapping(value = "/transaction/withdraw", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CommonResponse> withdrawTransaction(@Valid @RequestBody BankTransactionRequest request) {
+        logger.info("START IMPLEMENTING WITHDRAW TRANSACTION, transactionRequest : {}", request);
+        CommonResponse commonResponse = bankService.withdrawTransaction(request);
+        logger.info("END IMPLEMENTING WITHDRAW TRANSACTION, response : {}",commonResponse);
+        return new ResponseEntity<>(commonResponse, commonResponse.getHttpStatus());
+    }
 
     }
 

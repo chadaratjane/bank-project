@@ -4,6 +4,7 @@ import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -38,5 +39,17 @@ public class ErrorHandler {
         commonResponse.setData(errorResponse);
         commonResponse.setHttpStatus(HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus()) ;
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<CommonResponse> handlerDataAccess(DataAccessException e){
+        logger.error("DATA ACCESS FAILED",e);
+        CommonResponse commonResponse = new CommonResponse();
+        commonResponse.setStatus("DATA ACCESS FAILED");
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setError("DATA ACCESS FAILED");
+        commonResponse.setData(errorResponse);
+        commonResponse.setHttpStatus(HttpStatus.REQUEST_TIMEOUT);
+        return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
 }

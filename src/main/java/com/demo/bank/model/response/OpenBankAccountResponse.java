@@ -45,7 +45,7 @@ public class OpenBankAccountResponse {
     public String toString() {
         return "BankResponseOpenBankAccount{" +
                 "accountName='" + accountName + '\'' +
-                ", accountNumber='" + accountNumber + '\'' +
+                ", accountNumber='" + "XXXXX" + accountNumber.substring(5,10)+ '\'' +
                 ", branchId=" + branchId +
                 ", branchName='" + branchName + '\'' +
                 '}';
