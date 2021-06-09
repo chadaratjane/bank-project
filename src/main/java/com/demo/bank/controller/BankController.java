@@ -1,6 +1,7 @@
 package com.demo.bank.controller;
 
 import com.demo.bank.model.request.BankTransactionRequest;
+import com.demo.bank.model.request.BankTransferRequest;
 import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.service.BankService;
@@ -46,6 +47,13 @@ public class BankController {
         return new ResponseEntity<>(commonResponse, commonResponse.getHttpStatus());
     }
 
+    @PostMapping(value = "/transaction/transfer",produces = MediaType.APPLICATION_JSON_VALUE,consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CommonResponse> transferTransaction(@Valid@RequestBody BankTransferRequest request){
+        logger.info("START IMPLEMENTING TRANSFER TRANSACTION, transactionRequest : {}", request);
+        CommonResponse commonResponse = bankService.transferTransaction(request);
+        logger.info("END IMPLEMENTING TRANSFER TRANSACTION, response : {}",commonResponse);
+        return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
+    }
     }
 
 
