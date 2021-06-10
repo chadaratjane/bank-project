@@ -10,6 +10,7 @@ import com.demo.bank.model.request.BankTransferRequest;
 import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.BankTransactionResponse;
 import com.demo.bank.model.response.BankTransferResponse;
+import com.demo.bank.model.response.CloseBankAccountResponse;
 import com.demo.bank.model.response.OpenBankAccountResponse;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
@@ -220,6 +221,53 @@ public class BankService {
         return commonResponse;
     }
 
+    public CommonResponse closeBankAccount(String accountNumber){
+        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(accountNumber,"ACTIVATED");
+        CommonResponse commonResponse = new CommonResponse();
+
+        if (bankAccountsEntity != null){
+            logger.info("BANK ACCOUNT FOUND");
+            BankAccountsEntity entity = prepareCloseBankAccountsEntity(bankAccountsEntity);
+
+            BankAccountsEntity saveEntity = bankAccountsRepository.save(entity);
+
+            logger.info("CLOSE BANK ACCOUNT SUCCESSFULLY");
+            commonResponse.setStatus(Status.SUCCESS.getValue());
+            CloseBankAccountResponse closeBankAccountResponse = new CloseBankAccountResponse();
+            closeBankAccountResponse.setAccountName(saveEntity.getAccountName());
+            closeBankAccountResponse.setAccountNumber(saveEntity.getAccountNumber());
+            BankBranchesEntity findBranchName = bankBranchesRepository.findAllByBranchId(saveEntity.getAccountBranchId());
+            closeBankAccountResponse.setBranchName(findBranchName.getBranchName());
+            closeBankAccountResponse.setAccountStatus(saveEntity.getAccountStatus());
+            commonResponse.setData(closeBankAccountResponse);
+            commonResponse.setHttpStatus(HttpStatus.OK);
+
+        }else{
+            logger.error("BANK ACCOUNT NOT FOUND");
+            commonResponse.setStatus(Status.NOT_FOUND.getValue());
+            ErrorResponse errorResponse = new ErrorResponse();
+            errorResponse.setError("BANK ACCOUNT NOT FOUND");
+            commonResponse.setData(errorResponse);
+            commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
+
+        }
+        return commonResponse;
+    }
+
+
+    private BankAccountsEntity prepareCloseBankAccountsEntity(BankAccountsEntity bankAccountsEntity) {
+        BankAccountsEntity entity = new BankAccountsEntity();
+        entity.setAccountId(bankAccountsEntity.getAccountId());
+        entity.setAccountBranchId(bankAccountsEntity.getAccountBranchId());
+        entity.setAccountNumber(bankAccountsEntity.getAccountNumber());
+        entity.setAccountName(bankAccountsEntity.getAccountName());
+        entity.setAccountBalance(bankAccountsEntity.getAccountBalance());
+        entity.setAccountStatus("DEACTIVATED");
+        entity.setAccountCreatedDate(bankAccountsEntity.getAccountCreatedDate());
+        entity.setAccountUpdatedDate(Calendar.getInstance().getTime());
+        return entity;
+    }
+
     private BankTransactionsEntity prepareTransferTransactionEntity(BankTransferRequest request, BankAccountsEntity senderBankAccountsEntity, BankAccountsEntity receiverBankAccountsEntity) {
         BankTransactionsEntity bankTransactionsEntity = new BankTransactionsEntity();
         bankTransactionsEntity.setTransactionId(UUID.randomUUID());
@@ -263,7 +311,6 @@ public class BankService {
         bankTransactionsEntity.setTransactionDate(Calendar.getInstance().getTime());
         return bankTransactionsEntity;
     }
-
 
     private BankAccountsEntity prepareBankAccountsEntity(OpenBankAccountRequest request, Integer branchId, String accountNumber) {
         BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();

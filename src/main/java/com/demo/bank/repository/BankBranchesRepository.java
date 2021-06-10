@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 public interface BankBranchesRepository extends JpaRepository<BankBranchesEntity, Integer> {
 
     BankBranchesEntity findAllByBranchName(String branchName);
+    BankBranchesEntity findAllByBranchId (Integer branchId);
 }
 
 

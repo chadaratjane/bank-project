@@ -10,6 +10,8 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,8 +54,18 @@ public class BankController {
         logger.info("START IMPLEMENTING TRANSFER TRANSACTION, transactionRequest : {}", request);
         CommonResponse commonResponse = bankService.transferTransaction(request);
         logger.info("END IMPLEMENTING TRANSFER TRANSACTION, response : {}",commonResponse);
-        return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
+        return new ResponseEntity<>(commonResponse, commonResponse.getHttpStatus());
     }
+
+    @DeleteMapping(value = "/accounts/{accountNumber}/deactivated", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CommonResponse> closeBankAccount(@PathVariable("accountNumber") String accountNumber) {
+        logger.info("START IMPLEMENTING CLOSE BANK ACCOUNT");
+        CommonResponse commonResponse = bankService.closeBankAccount(accountNumber);
+        logger.info("END IMPLEMENTING CLOSE BANK ACCOUNT, response : {}",commonResponse);
+        return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
+
+    }
+
     }
 
 
