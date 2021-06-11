@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -63,7 +64,14 @@ public class BankController {
         CommonResponse commonResponse = bankService.closeBankAccount(accountNumber);
         logger.info("END IMPLEMENTING CLOSE BANK ACCOUNT, response : {}",commonResponse);
         return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
+    }
 
+    @GetMapping(value = "/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CommonResponse> listAllBankAccount (){
+        logger.info("START IMPLEMENTING LIST ALL BANK ACCOUNTS");
+        CommonResponse commonResponse = bankService.listAllBankAccount();
+        logger.info("END IMPLEMENTING LIST ALL BANK ACCOUNTS, response : {}",commonResponse);
+        return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
 
     }

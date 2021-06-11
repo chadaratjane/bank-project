@@ -11,6 +11,7 @@ import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.BankTransactionResponse;
 import com.demo.bank.model.response.BankTransferResponse;
 import com.demo.bank.model.response.CloseBankAccountResponse;
+import com.demo.bank.model.response.GetAllBankAccountResponse;
 import com.demo.bank.model.response.OpenBankAccountResponse;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
@@ -23,10 +24,14 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -199,7 +204,7 @@ public class BankService {
 
                 logger.info("UPDATE BANK ACCOUNT SUCCESSFULLY");
 
-            }else {
+            } else {
                 logger.error("RECEIVER BANK ACCOUNT NOT FOUND");
                 commonResponse.setStatus(Status.NOT_FOUND.getValue());
                 ErrorResponse errorResponse = new ErrorResponse();
@@ -221,11 +226,11 @@ public class BankService {
         return commonResponse;
     }
 
-    public CommonResponse closeBankAccount(String accountNumber){
-        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(accountNumber,"ACTIVATED");
+    public CommonResponse closeBankAccount(String accountNumber) {
+        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(accountNumber, "ACTIVATED");
         CommonResponse commonResponse = new CommonResponse();
 
-        if (bankAccountsEntity != null){
+        if (bankAccountsEntity != null) {
             logger.info("BANK ACCOUNT FOUND");
             BankAccountsEntity entity = prepareCloseBankAccountsEntity(bankAccountsEntity);
 
@@ -242,7 +247,7 @@ public class BankService {
             commonResponse.setData(closeBankAccountResponse);
             commonResponse.setHttpStatus(HttpStatus.OK);
 
-        }else{
+        } else {
             logger.error("BANK ACCOUNT NOT FOUND");
             commonResponse.setStatus(Status.NOT_FOUND.getValue());
             ErrorResponse errorResponse = new ErrorResponse();
@@ -254,7 +259,33 @@ public class BankService {
         return commonResponse;
     }
 
+    public CommonResponse listAllBankAccount() {
+        List<BankAccountsEntity> bankAccountsEntityList = bankAccountsRepository.findAllByAccountStatus("ACTIVATED");
+        ArrayList<GetAllBankAccountResponse> list = new ArrayList<>();
+        CommonResponse commonResponse = new CommonResponse();
+        commonResponse.setStatus(Status.SUCCESS.getValue());
+        commonResponse.setHttpStatus(HttpStatus.OK);
+        if (CollectionUtils.isEmpty(bankAccountsEntityList)) {
+            logger.info("NO BANK ACCOUNT TO RETRIEVE");
+            commonResponse.setData(new ArrayList<GetAllBankAccountResponse>());
 
+        } else {
+            logger.info("RETRIEVE BANK ACCOUNT SUCCESSFULLY");
+            for (BankAccountsEntity tran : bankAccountsEntityList) {
+                GetAllBankAccountResponse item = new GetAllBankAccountResponse();
+                item.setAccountName(tran.getAccountName());
+                item.setAccountNumber(tran.getAccountNumber());
+
+                BankBranchesEntity bankBranchesEntity = bankBranchesRepository.findAllByBranchId(tran.getAccountBranchId());
+                item.setBranchName(bankBranchesEntity.getBranchName());
+                item.setAccountBalance(tran.getAccountBalance());
+                list.add(item);
+            }
+            commonResponse.setData(list);
+        }
+        return commonResponse;
+    }
+    
     private BankAccountsEntity prepareCloseBankAccountsEntity(BankAccountsEntity bankAccountsEntity) {
         BankAccountsEntity entity = new BankAccountsEntity();
         entity.setAccountId(bankAccountsEntity.getAccountId());

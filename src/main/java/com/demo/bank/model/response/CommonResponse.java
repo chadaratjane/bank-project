@@ -39,7 +39,7 @@ public class CommonResponse {
         return "CommonResponse{" +
                 "status='" + status + '\'' +
                 ", data=" + data +
-                ", httpStatus=" + httpStatus +
+                ", httpStatus=" + httpStatus.getReasonPhrase()+
                 '}';
     }
 }
