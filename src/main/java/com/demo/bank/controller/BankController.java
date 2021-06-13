@@ -67,10 +67,18 @@ public class BankController {
     }
 
     @GetMapping(value = "/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CommonResponse> listAllBankAccount (){
+    public ResponseEntity<CommonResponse> getAllBankAccount(){
         logger.info("START IMPLEMENTING LIST ALL BANK ACCOUNTS");
-        CommonResponse commonResponse = bankService.listAllBankAccount();
+        CommonResponse commonResponse = bankService.getAllBankAccount();
         logger.info("END IMPLEMENTING LIST ALL BANK ACCOUNTS, response : {}",commonResponse);
+        return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
+    }
+
+    @GetMapping(value = "/transactions/{accountNumber}",produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CommonResponse> getAllTransaction(@PathVariable("accountNumber") String accountNumber){
+        logger.info("START IMPLEMENTING LIST ALL TRANSACTIONS");
+        CommonResponse commonResponse = bankService.getAllTransaction(accountNumber);
+        logger.info("END IMPLEMENTING LIST ALL TRANSACTIONS, response : {}",commonResponse);
         return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
 
