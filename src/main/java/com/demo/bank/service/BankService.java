@@ -1,5 +1,6 @@
 package com.demo.bank.service;
 
+import com.demo.bank.constant.AccountStatus;
 import com.demo.bank.constant.Status;
 import com.demo.bank.model.entity.BankAccountsEntity;
 import com.demo.bank.model.entity.BankBranchesEntity;
@@ -11,11 +12,11 @@ import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.BankTransactionResponse;
 import com.demo.bank.model.response.BankTransferResponse;
 import com.demo.bank.model.response.CloseBankAccountResponse;
+import com.demo.bank.model.response.CommonResponse;
+import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.model.response.GetAllBankAccountResponse;
 import com.demo.bank.model.response.GetAllTransactionResponse;
 import com.demo.bank.model.response.OpenBankAccountResponse;
-import com.demo.bank.model.response.CommonResponse;
-import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.repository.BankAccountsRepository;
 import com.demo.bank.repository.BankBranchesRepository;
 import com.demo.bank.repository.BankTransactionsRepository;
@@ -23,6 +24,9 @@ import com.demo.bank.repository.CustomerInformationRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -98,7 +102,7 @@ public class BankService {
     }
 
     public CommonResponse depositTransaction(BankTransactionRequest request) {
-        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getAccountNumber(), "ACTIVATED");
+        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getAccountNumber(), AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
         if (bankAccountsEntity != null) {
             logger.info("BANK ACCOUNT FOUND");
@@ -135,7 +139,7 @@ public class BankService {
     }
 
     public CommonResponse withdrawTransaction(BankTransactionRequest request) {
-        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getAccountNumber(), "ACTIVATED");
+        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getAccountNumber(), AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
         if (bankAccountsEntity != null) {
             logger.info("BANK ACCOUNT FOUND");
@@ -173,36 +177,30 @@ public class BankService {
     }
 
     public CommonResponse transferTransaction(BankTransferRequest request) {
-        BankAccountsEntity senderBankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getSenderAccountNumber(), "ACTIVATED");
+        BankAccountsEntity senderBankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getSenderAccountNumber(), AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
         if (senderBankAccountsEntity != null) {
-            BankAccountsEntity receiverBankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getReceiverAccountNumber(), "ACTIVATED");
+            BankAccountsEntity receiverBankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getReceiverAccountNumber(), AccountStatus.ACTIVATED.getValue());
             if (receiverBankAccountsEntity != null) {
                 logger.info("FOUND SENDER AND RECEIVER BANK ACCOUNT");
                 BankTransactionsEntity bankTransactionsEntity = prepareTransferTransactionEntity(request, senderBankAccountsEntity, receiverBankAccountsEntity);
 
                 BankTransactionsEntity saveEntity = bankTransactionsRepository.save(bankTransactionsEntity);
 
-                logger.info("TRANSFER TRANSACTION SUCCESSFULLY");
-                commonResponse.setStatus(Status.SUCCESS.getValue());
-                BankTransferResponse bankTransferResponse = new BankTransferResponse();
-                bankTransferResponse.setSenderAccountNumber(senderBankAccountsEntity.getAccountNumber());
-                bankTransferResponse.setReceiverAccountNumber(receiverBankAccountsEntity.getAccountNumber());
-                bankTransferResponse.setAmount(saveEntity.getTransactionAmount());
+                logger.info("SAVED BANK TRANSACTION SUCCESSFULLY");
                 BigDecimal senderAccountBalance = senderBankAccountsEntity.getAccountBalance();
                 BigDecimal updatedSenderAccountBalance = senderAccountBalance.subtract(saveEntity.getTransactionAmount());
-                bankTransferResponse.setSenderAccountBalance(updatedSenderAccountBalance);
-                bankTransferResponse.setTransactionDate(saveEntity.getTransactionDate());
-                commonResponse.setData(bankTransferResponse);
-                commonResponse.setHttpStatus(HttpStatus.CREATED);
-
                 bankAccountsRepository.save(updateBankAccountsEntity(senderBankAccountsEntity, updatedSenderAccountBalance));
 
                 BigDecimal receiverAccountBalance = receiverBankAccountsEntity.getAccountBalance();
                 BigDecimal updatedReceiverAccountBalance = receiverAccountBalance.add(saveEntity.getTransactionAmount());
                 bankAccountsRepository.save(updateBankAccountsEntity(receiverBankAccountsEntity, updatedReceiverAccountBalance));
 
-                logger.info("UPDATE BANK ACCOUNT SUCCESSFULLY");
+                BankTransferResponse bankTransferResponse = getBankTransferResponse(senderBankAccountsEntity, receiverBankAccountsEntity, saveEntity, updatedSenderAccountBalance);
+                commonResponse.setStatus(Status.SUCCESS.getValue());
+                commonResponse.setData(bankTransferResponse);
+                commonResponse.setHttpStatus(HttpStatus.CREATED);
+                logger.info("TRANSFERRED AND UPDATED BANK ACCOUNT SUCCESSFULLY");
 
             } else {
                 logger.error("RECEIVER BANK ACCOUNT NOT FOUND");
@@ -227,7 +225,7 @@ public class BankService {
     }
 
     public CommonResponse closeBankAccount(String accountNumber) {
-        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(accountNumber, "ACTIVATED");
+        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(accountNumber, AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
 
         if (bankAccountsEntity != null) {
@@ -260,7 +258,7 @@ public class BankService {
     }
 
     public CommonResponse getAllBankAccount() {
-        List<BankAccountsEntity> bankAccountsEntityList = bankAccountsRepository.findAllByAccountStatus("ACTIVATED");
+        List<BankAccountsEntity> bankAccountsEntityList = bankAccountsRepository.findAllByAccountStatus(AccountStatus.ACTIVATED.getValue());
         ArrayList<GetAllBankAccountResponse> list = new ArrayList<>();
         CommonResponse commonResponse = new CommonResponse();
         commonResponse.setStatus(Status.SUCCESS.getValue());
@@ -285,22 +283,32 @@ public class BankService {
         return commonResponse;
     }
 
-    public CommonResponse getAllTransaction(String accountNumber){
-    BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(accountNumber,"ACTIVATED");
+    public CommonResponse getAllTransaction(String accountNumber ,Date dateFrom, Date dateTo, String sort){
+    BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(accountNumber,AccountStatus.ACTIVATED.getValue());
     CommonResponse commonResponse = new CommonResponse();
     if (bankAccountsEntity != null){
         logger.info("BANK ACCOUNT FOUND");
-        List<BankTransactionsEntity> bankTransactionsEntityList = bankTransactionsRepository.findAllByAccountId(bankAccountsEntity.getAccountId());
+
+        Direction sortMethod ;
+        if ("ASC".equalsIgnoreCase(sort)) {
+            sortMethod = Direction.ASC;
+        }else {
+            sortMethod = Direction.DESC;
+        }
+        Pageable page =  PageRequest.of(0,20000, sortMethod,"transaction_date");
+
+        List<BankTransactionsEntity> getAccountBetweenDateRange = bankTransactionsRepository.findAllByAccountIdAndDate(bankAccountsEntity.getAccountId(),dateFrom,addingDate(dateTo,1),page);
+
         ArrayList<GetAllTransactionResponse> list = new ArrayList<>();
         commonResponse.setStatus(Status.SUCCESS.getValue());
         commonResponse.setHttpStatus(HttpStatus.OK);
-        if (CollectionUtils.isEmpty(bankTransactionsEntityList)){
+        if (CollectionUtils.isEmpty(getAccountBetweenDateRange)){
             logger.info("NO TRANSACTION TO RETRIEVE");
             commonResponse.setData(new ArrayList<GetAllTransactionResponse>());
 
         }else{
             logger.info("RETRIEVE TRANSACTION SUCCESSFULLY");
-            for (BankTransactionsEntity tran : bankTransactionsEntityList) {
+            for (BankTransactionsEntity tran : getAccountBetweenDateRange) {
                 GetAllTransactionResponse item = new GetAllTransactionResponse();
                 item.setTransactionDate(tran.getTransactionDate());
                 item.setAmount(tran.getTransactionAmount());
@@ -323,6 +331,16 @@ public class BankService {
         return commonResponse;
     }
 
+    private BankTransferResponse getBankTransferResponse(BankAccountsEntity senderBankAccountsEntity, BankAccountsEntity receiverBankAccountsEntity, BankTransactionsEntity saveEntity, BigDecimal updatedSenderAccountBalance) {
+        BankTransferResponse bankTransferResponse = new BankTransferResponse();
+        bankTransferResponse.setSenderAccountNumber(senderBankAccountsEntity.getAccountNumber());
+        bankTransferResponse.setReceiverAccountNumber(receiverBankAccountsEntity.getAccountNumber());
+        bankTransferResponse.setAmount(saveEntity.getTransactionAmount());
+        bankTransferResponse.setSenderAccountBalance(updatedSenderAccountBalance);
+        bankTransferResponse.setTransactionDate(saveEntity.getTransactionDate());
+        return bankTransferResponse;
+    }
+
     private BankAccountsEntity prepareCloseBankAccountsEntity(BankAccountsEntity bankAccountsEntity) {
         BankAccountsEntity entity = new BankAccountsEntity();
         entity.setAccountId(bankAccountsEntity.getAccountId());
@@ -330,7 +348,7 @@ public class BankService {
         entity.setAccountNumber(bankAccountsEntity.getAccountNumber());
         entity.setAccountName(bankAccountsEntity.getAccountName());
         entity.setAccountBalance(bankAccountsEntity.getAccountBalance());
-        entity.setAccountStatus("DEACTIVATED");
+        entity.setAccountStatus(AccountStatus.DEACTIVATED.getValue());
         entity.setAccountCreatedDate(bankAccountsEntity.getAccountCreatedDate());
         entity.setAccountUpdatedDate(Calendar.getInstance().getTime());
         return entity;
@@ -387,7 +405,7 @@ public class BankService {
         bankAccountsEntity.setAccountNumber(accountNumber);
         bankAccountsEntity.setAccountName(request.getName());
         bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
-        bankAccountsEntity.setAccountStatus("ACTIVATED");
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
         Date date = Calendar.getInstance().getTime();
         bankAccountsEntity.setAccountCreatedDate(date);
         bankAccountsEntity.setAccountUpdatedDate(date);
@@ -403,4 +421,14 @@ public class BankService {
         }
         return stringAccountNumber;
     }
+
+    private Date addingDate(Date date, int amount){
+        Calendar c = Calendar.getInstance();
+        c.setTime(date);
+        c.add(Calendar.DATE, amount);
+        Date result = c.getTime();
+    return result;
+    }
+
+
 }
