@@ -1,5 +1,7 @@
 package com.demo.bank.configuration;
 
+import com.demo.bank.constant.Status;
+import com.demo.bank.exception.ValidateException;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
 import org.apache.logging.log4j.LogManager;
@@ -50,6 +52,18 @@ public class ErrorHandler {
         errorResponse.setError("DATA ACCESS FAILED");
         commonResponse.setData(errorResponse);
         commonResponse.setHttpStatus(HttpStatus.REQUEST_TIMEOUT);
+        return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
+    }
+
+    @ExceptionHandler(ValidateException.class)
+    public ResponseEntity<CommonResponse> handlerManualValidateException(ValidateException e){
+        logger.error("VALIDATION FAILED, {}",e.getErrorCause());
+        CommonResponse commonResponse = new CommonResponse();
+        commonResponse.setStatus(Status.ERROR.getValue());
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setError(e.getErrorMessage());
+        commonResponse.setData(errorResponse);
+        commonResponse.setHttpStatus(HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
 }
