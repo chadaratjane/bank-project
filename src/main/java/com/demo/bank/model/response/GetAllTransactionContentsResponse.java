@@ -3,7 +3,7 @@ package com.demo.bank.model.response;
 import java.math.BigDecimal;
 import java.util.Date;
 
-public class GetAllTransactionResponse {
+public class GetAllTransactionContentsResponse {
 
     private Date transactionDate;
     private BigDecimal amount;
@@ -32,6 +32,7 @@ public class GetAllTransactionResponse {
     public void setTransactionType(String transactionType) {
         this.transactionType = transactionType;
     }
+
 
     @Override
     public String toString() {

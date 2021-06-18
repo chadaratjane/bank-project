@@ -15,8 +15,9 @@ import com.demo.bank.model.response.CloseBankAccountResponse;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.model.response.GetAllBankAccountResponse;
-import com.demo.bank.model.response.GetAllTransactionResponse;
+import com.demo.bank.model.response.GetAllTransactionContentsResponse;
 import com.demo.bank.model.response.OpenBankAccountResponse;
+import com.demo.bank.model.response.GetAllTransactionPageResponse;
 import com.demo.bank.repository.BankAccountsRepository;
 import com.demo.bank.repository.BankBranchesRepository;
 import com.demo.bank.repository.BankTransactionsRepository;
@@ -24,6 +25,7 @@ import com.demo.bank.repository.CustomerInformationRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -133,6 +135,7 @@ public class BankService {
             ErrorResponse errorResponse = new ErrorResponse();
             errorResponse.setError("BANK ACCOUNT NOT FOUND");
             commonResponse.setData(errorResponse);
+
             commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
         }
         return commonResponse;
@@ -283,49 +286,62 @@ public class BankService {
         return commonResponse;
     }
 
-    public CommonResponse getAllTransaction(String accountNumber ,Date dateFrom, Date dateTo, String sort){
-    BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(accountNumber,AccountStatus.ACTIVATED.getValue());
-    CommonResponse commonResponse = new CommonResponse();
-    if (bankAccountsEntity != null){
-        logger.info("BANK ACCOUNT FOUND");
+    public CommonResponse getAllTransaction(String accountNumber, Date dateFrom, Date dateTo, String sort, Integer pageNumber, Integer perPage) {
+        BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(
+                accountNumber, AccountStatus.ACTIVATED.getValue());
+        CommonResponse commonResponse = new CommonResponse();
+        if (bankAccountsEntity != null) {
+            logger.info("BANK ACCOUNT FOUND");
 
-        Direction sortMethod ;
-        if ("ASC".equalsIgnoreCase(sort)) {
-            sortMethod = Direction.ASC;
-        }else {
-            sortMethod = Direction.DESC;
-        }
-        Pageable page =  PageRequest.of(0,20000, sortMethod,"transaction_date");
-
-        List<BankTransactionsEntity> getAccountBetweenDateRange = bankTransactionsRepository.findAllByAccountIdAndDate(bankAccountsEntity.getAccountId(),dateFrom,addingDate(dateTo,1),page);
-
-        ArrayList<GetAllTransactionResponse> list = new ArrayList<>();
-        commonResponse.setStatus(Status.SUCCESS.getValue());
-        commonResponse.setHttpStatus(HttpStatus.OK);
-        if (CollectionUtils.isEmpty(getAccountBetweenDateRange)){
-            logger.info("NO TRANSACTION TO RETRIEVE");
-            commonResponse.setData(new ArrayList<GetAllTransactionResponse>());
-
-        }else{
-            logger.info("RETRIEVE TRANSACTION SUCCESSFULLY");
-            for (BankTransactionsEntity tran : getAccountBetweenDateRange) {
-                GetAllTransactionResponse item = new GetAllTransactionResponse();
-                item.setTransactionDate(tran.getTransactionDate());
-                item.setAmount(tran.getTransactionAmount());
-                item.setTransactionType(tran.getTransactionType());
-                list.add(item);
-
+            Direction sortMethod;
+            if ("ASC".equalsIgnoreCase(sort)) {
+                sortMethod = Direction.ASC;
+            } else {
+                sortMethod = Direction.DESC;
             }
-        }
-        commonResponse.setData(list);
 
-    }else {
-        logger.info("BANK ACCOUNT NOT FOUND");
-        commonResponse.setStatus(Status.NOT_FOUND.getValue());
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setError("BANK ACCOUNT NOT FOUND");
-        commonResponse.setData(errorResponse);
-        commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
+            Pageable page = PageRequest.of(pageNumber - 1, perPage, sortMethod, "transaction_date");
+
+            Page<BankTransactionsEntity> pageResult = bankTransactionsRepository.findAllByAccountIdAndDate(
+                    bankAccountsEntity.getAccountId(), dateFrom, addingDate(dateTo, 1), page);
+
+            ArrayList<GetAllTransactionContentsResponse> list = new ArrayList<>();
+            commonResponse.setStatus(Status.SUCCESS.getValue());
+            commonResponse.setHttpStatus(HttpStatus.OK);
+            if (!pageResult.hasContent()) {
+                logger.info("NO TRANSACTION TO RETRIEVE");
+                GetAllTransactionPageResponse getAllTransactionPageResponse = new GetAllTransactionPageResponse();
+                getAllTransactionPageResponse.setTotalItem(Long.valueOf(pageResult.getTotalElements()).intValue());
+                getAllTransactionPageResponse.setTotalPage(pageResult.getTotalPages());
+                getAllTransactionPageResponse.setCurrentPage(pageResult.getNumber()+1);
+                getAllTransactionPageResponse.setContents(new ArrayList<>());
+                commonResponse.setData(getAllTransactionPageResponse);
+
+            } else {
+                logger.info("RETRIEVE TRANSACTION SUCCESSFULLY");
+                GetAllTransactionPageResponse getAllTransactionPageResponse = new GetAllTransactionPageResponse();
+                getAllTransactionPageResponse.setTotalItem(Long.valueOf(pageResult.getTotalElements()).intValue());
+                getAllTransactionPageResponse.setTotalPage(pageResult.getTotalPages());
+                getAllTransactionPageResponse.setCurrentPage(pageResult.getNumber()+1);
+
+                for (BankTransactionsEntity tran : pageResult.getContent()) {
+                    GetAllTransactionContentsResponse item = new GetAllTransactionContentsResponse();
+                    item.setTransactionDate(tran.getTransactionDate());
+                    item.setAmount(tran.getTransactionAmount());
+                    item.setTransactionType(tran.getTransactionType());
+                    list.add(item);
+                }
+                getAllTransactionPageResponse.setContents(list);
+                commonResponse.setData(getAllTransactionPageResponse);
+            }
+
+        } else {
+            logger.info("BANK ACCOUNT NOT FOUND");
+            commonResponse.setStatus(Status.NOT_FOUND.getValue());
+            ErrorResponse errorResponse = new ErrorResponse();
+            errorResponse.setError("BANK ACCOUNT NOT FOUND");
+            commonResponse.setData(errorResponse);
+            commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
 
     }
         return commonResponse;
