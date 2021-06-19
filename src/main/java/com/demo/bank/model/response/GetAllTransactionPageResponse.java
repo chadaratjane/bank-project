@@ -42,7 +42,7 @@ public class GetAllTransactionPageResponse {
 
     @Override
     public String toString() {
-        return "PageResponse{" +
+        return "GetAllTransactionPageResponse{" +
                 "totalPage=" + totalPage +
                 ", totalItem=" + totalItem +
                 ", currentPage=" + currentPage +

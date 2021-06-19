@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -186,11 +187,11 @@ public class BankService {
             BankAccountsEntity receiverBankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getReceiverAccountNumber(), AccountStatus.ACTIVATED.getValue());
             if (receiverBankAccountsEntity != null) {
                 logger.info("FOUND SENDER AND RECEIVER BANK ACCOUNT");
+
                 BankTransactionsEntity bankTransactionsEntity = prepareTransferTransactionEntity(request, senderBankAccountsEntity, receiverBankAccountsEntity);
-
                 BankTransactionsEntity saveEntity = bankTransactionsRepository.save(bankTransactionsEntity);
-
                 logger.info("SAVED BANK TRANSACTION SUCCESSFULLY");
+
                 BigDecimal senderAccountBalance = senderBankAccountsEntity.getAccountBalance();
                 BigDecimal updatedSenderAccountBalance = senderAccountBalance.subtract(saveEntity.getTransactionAmount());
                 bankAccountsRepository.save(updateBankAccountsEntity(senderBankAccountsEntity, updatedSenderAccountBalance));
@@ -329,6 +330,15 @@ public class BankService {
                     item.setTransactionDate(tran.getTransactionDate());
                     item.setAmount(tran.getTransactionAmount());
                     item.setTransactionType(tran.getTransactionType());
+                    if (tran.getTransactionType().equals("TRANSFER")) {
+                        Optional<BankAccountsEntity> bankAccountResultOptional = bankAccountsRepository.findById(tran.getTransactionAccountIdTo());
+                        if (bankAccountResultOptional.isPresent()) {
+                            BankAccountsEntity bankAccountResult = bankAccountResultOptional.get();
+                            String receiverAccountNumber = "XXXXX" + bankAccountResult.getAccountNumber().substring(5, 10);
+                            item.setReceiverAccountNumber(receiverAccountNumber);
+                            item.setReceiverAccountName(bankAccountResult.getAccountName());
+                        }
+                    }
                     list.add(item);
                 }
                 getAllTransactionPageResponse.setContents(list);
