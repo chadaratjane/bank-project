@@ -5,6 +5,7 @@ import com.demo.bank.model.entity.BankAccountsEntity;
 import com.demo.bank.model.entity.BankBranchesEntity;
 import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.CommonResponse;
+import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.model.response.OpenBankAccountResponse;
 import com.demo.bank.repository.BankAccountsRepository;
 import com.demo.bank.repository.BankBranchesRepository;
@@ -89,6 +90,58 @@ public class BankServiceTest {
         assertEquals("SUCCESS",commonResponse.getStatus());
         assertEquals(HttpStatus.CREATED,commonResponse.getHttpStatus());
 
+    }
+
+    @Test
+    public void fail_openBankAccount_duplicateAccountNumber(){
+
+        BankBranchesEntity bankBranchesEntity = new BankBranchesEntity();
+        Integer resultBranchId = new Random().nextInt(10);
+        bankBranchesEntity.setBranchId(resultBranchId);
+        bankBranchesEntity.setBranchName("mockBranchName");
+        Mockito.when(bankBranchesRepository.findAllByBranchName("mockBranchName")).thenReturn(bankBranchesEntity);
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountNumber("0123456789");
+        Mockito.when(bankAccountsRepository.findAllByAccountNumber(anyString())).thenReturn(bankAccountsEntity);
+
+        BankAccountsEntity expectedResult = new BankAccountsEntity();
+        expectedResult.setAccountNumber("0123456789");
+
+        OpenBankAccountRequest openBankAccountRequest = new OpenBankAccountRequest();
+        openBankAccountRequest.setName("MockName");
+        openBankAccountRequest.setDateOfBirth("12-02-1994");
+        openBankAccountRequest.setAddress("MockAddress");
+        openBankAccountRequest.setBranchName(bankBranchesEntity.getBranchName());
+
+        CommonResponse commonResponse = bankService.openBankAccount(openBankAccountRequest);
+
+        ErrorResponse errorResponse = (ErrorResponse) commonResponse.getData();
+
+        assertEquals("ERROR",commonResponse.getStatus());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR,commonResponse.getHttpStatus());
+        assertEquals("ERROR",errorResponse.getError());
+
+    }
+
+    @Test
+    public void fail_openBankAccount_NotFoundBranchName(){
+
+        BankBranchesEntity bankBranchesEntity = new BankBranchesEntity();
+        bankBranchesEntity.setBranchName("MockBranchName");
+
+        Mockito.when(bankBranchesRepository.findAllByBranchName(any())).thenReturn(null);
+
+        OpenBankAccountRequest openBankAccountRequest = new OpenBankAccountRequest();
+        openBankAccountRequest.setBranchName("MockBranchName");
+
+        CommonResponse commonResponse = bankService.openBankAccount(openBankAccountRequest);
+
+        ErrorResponse errorResponse = (ErrorResponse) commonResponse.getData();
+
+        assertEquals("NOT_FOUND",commonResponse.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
+        assertEquals("BRANCH NOT FOUND",errorResponse.getError());
     }
 
 }
