@@ -25,6 +25,7 @@ import com.demo.bank.repository.CustomerInformationRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -56,43 +57,58 @@ public class BankService {
     @Autowired
     private CustomerInformationRepository customerInformationRepository;
 
+    @Value("${openaccount.random.max.attempt}")
+    private Integer openAccountAttempt;
+
     public CommonResponse openBankAccount(OpenBankAccountRequest request) {
         BankBranchesEntity findBranch = bankBranchesRepository.findAllByBranchName(request.getBranchName());
         CommonResponse commonResponse = new CommonResponse();
 
         if (findBranch != null) {
             logger.info("BRANCH FOUND");
-            String accountNumber;
-            while (true) {
-                accountNumber = generateAccountNumber();
+            String accountNumber = generateAccountNumber();
+            boolean errorDuplicate = true;
+            for (int i = 0; i < openAccountAttempt-1; i++) {
                 BankAccountsEntity findAccountNumber = bankAccountsRepository.findAllByAccountNumber(accountNumber);
                 if (findAccountNumber == null) {
+                    errorDuplicate = false;
                     break;
                 }
+                accountNumber = generateAccountNumber();
             }
-            BankAccountsEntity bankAccountsEntity = prepareBankAccountsEntity(request, findBranch.getBranchId(), accountNumber);
+            if (errorDuplicate) {
+                logger.error("GENERATE ACCOUNT NUMBER FAILED, DUPLICATE VALUE");
+                CommonResponse errorResponse = new CommonResponse();
+                errorResponse.setStatus(Status.ERROR.getValue());
+                ErrorResponse error = new ErrorResponse();
+                error.setError("ERROR");
+                errorResponse.setData(error);
+                errorResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+                return errorResponse;
+            } else {
+                BankAccountsEntity bankAccountsEntity = prepareBankAccountsEntity(request, findBranch.getBranchId(), accountNumber);
 
-            BankAccountsEntity saveEntity = bankAccountsRepository.save(bankAccountsEntity);
+                BankAccountsEntity saveEntity = bankAccountsRepository.save(bankAccountsEntity);
 
-            logger.info("OPEN BANK ACCOUNT SUCCESSFULLY");
-            commonResponse.setStatus(Status.SUCCESS.getValue());
-            OpenBankAccountResponse responseOpenBankAccount = new OpenBankAccountResponse();
-            responseOpenBankAccount.setAccountName(saveEntity.getAccountName());
-            responseOpenBankAccount.setAccountNumber(saveEntity.getAccountNumber());
-            responseOpenBankAccount.setBranchId(saveEntity.getAccountBranchId());
-            responseOpenBankAccount.setBranchName(findBranch.getBranchName());
-            commonResponse.setData(responseOpenBankAccount);
-            commonResponse.setHttpStatus(HttpStatus.CREATED);
+                logger.info("OPEN BANK ACCOUNT SUCCESSFULLY");
+                commonResponse.setStatus(Status.SUCCESS.getValue());
+                OpenBankAccountResponse responseOpenBankAccount = new OpenBankAccountResponse();
+                responseOpenBankAccount.setAccountName(saveEntity.getAccountName());
+                responseOpenBankAccount.setAccountNumber(saveEntity.getAccountNumber());
+                responseOpenBankAccount.setBranchId(saveEntity.getAccountBranchId());
+                responseOpenBankAccount.setBranchName(findBranch.getBranchName());
+                commonResponse.setData(responseOpenBankAccount);
+                commonResponse.setHttpStatus(HttpStatus.CREATED);
 
-            CustomerInformationEntity customerInformationEntity = new CustomerInformationEntity();
-            logger.info("SAVE CUSTOMER INFORMATION SUCCESSFULLY");
-            UUID id = UUID.randomUUID();
-            customerInformationEntity.setCustomerId(id);
-            customerInformationEntity.setCustomerName(saveEntity.getAccountName());
-            customerInformationEntity.setCustomerDateOfBirth(request.getDateOfBirth());
-            customerInformationEntity.setCustomerAddress(request.getAddress());
-            customerInformationRepository.save(customerInformationEntity);
-
+                CustomerInformationEntity customerInformationEntity = new CustomerInformationEntity();
+                logger.info("SAVE CUSTOMER INFORMATION SUCCESSFULLY");
+                UUID id = UUID.randomUUID();
+                customerInformationEntity.setCustomerId(id);
+                customerInformationEntity.setCustomerName(saveEntity.getAccountName());
+                customerInformationEntity.setCustomerDateOfBirth(request.getDateOfBirth());
+                customerInformationEntity.setCustomerAddress(request.getAddress());
+                customerInformationRepository.save(customerInformationEntity);
+            }
         } else {
             logger.error("BRANCH NOT FOUND");
             commonResponse.setStatus(Status.NOT_FOUND.getValue());
@@ -102,6 +118,7 @@ public class BankService {
             commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
         }
         return commonResponse;
+
     }
 
     public CommonResponse depositTransaction(BankTransactionRequest request) {
