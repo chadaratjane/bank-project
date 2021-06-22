@@ -177,7 +177,9 @@ public class BankServiceTest {
         updatedBankAccount.setAccountBranchId(bankAccountsEntity.getAccountBranchId());
         updatedBankAccount.setAccountNumber(bankAccountsEntity.getAccountNumber());
         updatedBankAccount.setAccountName(bankAccountsEntity.getAccountName());
-        updatedBankAccount.setAccountBalance(bankTransactionsEntity.getTransactionAmount());
+        BigDecimal accountBalance = bankAccountsEntity.getAccountBalance();
+        BigDecimal updatedAccountBalance = accountBalance.add(bankTransactionsEntity.getTransactionAmount());
+        updatedBankAccount.setAccountBalance(updatedAccountBalance);
         updatedBankAccount.setAccountStatus(bankAccountsEntity.getAccountStatus());
         updatedBankAccount.setAccountCreatedDate(bankAccountsEntity.getAccountCreatedDate());
         updatedBankAccount.setAccountUpdatedDate(Calendar.getInstance().getTime());
@@ -230,6 +232,91 @@ public class BankServiceTest {
         assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
 
     }
-    
+
+    @Test
+    public void success_withdrawTransaction(){
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountName("MockAccountName");
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                ("0123456789",AccountStatus.ACTIVATED.getValue())).thenReturn(bankAccountsEntity);
+
+        BankTransactionsEntity bankTransactionsEntity = new BankTransactionsEntity();
+        bankTransactionsEntity.setTransactionId(UUID.randomUUID());
+        bankTransactionsEntity.setAccountId(UUID.randomUUID());
+        bankTransactionsEntity.setTransactionAmount(BigDecimal.valueOf(500));
+        bankTransactionsEntity.setTransactionType("WITHDRAW");
+        bankTransactionsEntity.setTransactionDate(Calendar.getInstance().getTime());
+        Mockito.when(bankTransactionsRepository.save(any())).thenReturn(bankTransactionsEntity);
+
+        BankAccountsEntity updatedBankAccount = new BankAccountsEntity();
+        updatedBankAccount.setAccountId(bankAccountsEntity.getAccountId());
+        updatedBankAccount.setAccountBranchId(bankAccountsEntity.getAccountBranchId());
+        updatedBankAccount.setAccountNumber(bankAccountsEntity.getAccountNumber());
+        updatedBankAccount.setAccountName(bankAccountsEntity.getAccountName());
+        BigDecimal accountBalance = bankAccountsEntity.getAccountBalance();
+        BigDecimal updatedAccountBalance = accountBalance.subtract(bankTransactionsEntity.getTransactionAmount());
+        updatedBankAccount.setAccountBalance(updatedAccountBalance);
+        updatedBankAccount.setAccountStatus(bankAccountsEntity.getAccountStatus());
+        updatedBankAccount.setAccountCreatedDate(bankAccountsEntity.getAccountCreatedDate());
+        updatedBankAccount.setAccountUpdatedDate(Calendar.getInstance().getTime());
+
+        BankTransactionRequest bankTransactionRequest = new BankTransactionRequest();
+        bankTransactionRequest.setAccountName("MockAccountName");
+        bankTransactionRequest.setAccountNumber("0123456789");
+        bankTransactionRequest.setAmount(BigDecimal.valueOf(500));
+
+        CommonResponse commonResponse = bankService.withdrawTransaction(bankTransactionRequest);
+
+        BankTransactionResponse bankTransactionResponse = (BankTransactionResponse) commonResponse.getData();
+
+        assertEquals("SUCCESS",commonResponse.getStatus());
+        assertEquals(HttpStatus.CREATED,commonResponse.getHttpStatus());
+        assertEquals("MockAccountName",bankTransactionResponse.getAccountName());
+        assertEquals("0123456789",bankTransactionResponse.getAccountNumber());
+        assertEquals(bankTransactionsEntity.getTransactionAmount(),bankTransactionResponse.getAmount());
+        assertEquals(updatedBankAccount.getAccountBalance(),bankTransactionResponse.getAccountBalance());
+        assertEquals(bankTransactionsEntity.getTransactionDate(),bankTransactionResponse.getTransactionDate());
+
+    }
+
+    @Test
+    public void fail_withdrawTransaction_notFoundBankAccount(){
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountName("MockAccountName");
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                ("0123456789",AccountStatus.ACTIVATED.getValue())).thenReturn(null);
+
+        BankTransactionRequest bankTransactionRequest = new BankTransactionRequest();
+        bankTransactionRequest.setAccountName("MockAccountName");
+        bankTransactionRequest.setAccountNumber("0123456789");
+        bankTransactionRequest.setAmount(BigDecimal.valueOf(500));
+
+        CommonResponse commonResponse = bankService.withdrawTransaction(bankTransactionRequest);
+
+        ErrorResponse errorResponse = (ErrorResponse) commonResponse.getData();
+
+        assertEquals("NOT_FOUND",commonResponse.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
+        assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
+
+    }
 
 }
