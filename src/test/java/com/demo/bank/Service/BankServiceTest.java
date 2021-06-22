@@ -9,6 +9,7 @@ import com.demo.bank.model.request.BankTransferRequest;
 import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.BankTransactionResponse;
 import com.demo.bank.model.response.BankTransferResponse;
+import com.demo.bank.model.response.CloseBankAccountResponse;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.model.response.OpenBankAccountResponse;
@@ -467,6 +468,77 @@ public class BankServiceTest {
         assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
         assertEquals("RECEIVER BANK ACCOUNT NOT FOUND",errorResponse.getError());
 
+    }
+
+    @Test
+    public void success_closeBankAccount(){
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountName("mockAccountName");
+        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                (anyString(),anyString())).thenReturn(bankAccountsEntity);
+
+        BankAccountsEntity updatedBankAccount = new BankAccountsEntity();
+        updatedBankAccount.setAccountId(bankAccountsEntity.getAccountId());
+        updatedBankAccount.setAccountBranchId(bankAccountsEntity.getAccountBranchId());
+        updatedBankAccount.setAccountNumber(bankAccountsEntity.getAccountNumber());
+        updatedBankAccount.setAccountName(bankAccountsEntity.getAccountName());
+        updatedBankAccount.setAccountBalance(bankAccountsEntity.getAccountBalance());
+        updatedBankAccount.setAccountStatus(AccountStatus.DEACTIVATED.getValue());
+        updatedBankAccount.setAccountCreatedDate(bankAccountsEntity.getAccountCreatedDate());
+        updatedBankAccount.setAccountUpdatedDate(Calendar.getInstance().getTime());
+        Mockito.when(bankAccountsRepository.save(any())).thenReturn(updatedBankAccount);
+
+        BankBranchesEntity bankBranchesEntity = new BankBranchesEntity();
+        bankBranchesEntity.setBranchId(1);
+        bankBranchesEntity.setBranchName("MockBranchName");
+        Mockito.when(bankBranchesRepository.findAllByBranchId(updatedBankAccount.getAccountBranchId()))
+                .thenReturn(bankBranchesEntity);
+
+        CommonResponse commonResponse = bankService.closeBankAccount(updatedBankAccount.getAccountNumber());
+
+        CloseBankAccountResponse closeBankAccountResponse = (CloseBankAccountResponse) commonResponse.getData();
+
+        assertEquals("SUCCESS",commonResponse.getStatus());
+        assertEquals(HttpStatus.OK,commonResponse.getHttpStatus());
+        assertEquals(updatedBankAccount.getAccountName(),closeBankAccountResponse.getAccountName());
+        assertEquals(updatedBankAccount.getAccountNumber(),closeBankAccountResponse.getAccountNumber());
+        assertEquals(updatedBankAccount.getAccountStatus(),closeBankAccountResponse.getAccountStatus());
+        assertEquals(bankBranchesEntity.getBranchName(),closeBankAccountResponse.getBranchName());
+
+    }
+
+    @Test
+    public void fail_closeBankAccount_notFoundBankAccount(){
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountName("MockAccountName");
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                (anyString(),anyString())).thenReturn(null);
+
+        CommonResponse commonResponse = bankService.closeBankAccount(bankAccountsEntity.getAccountNumber());
+
+        ErrorResponse errorResponse = (ErrorResponse) commonResponse.getData();
+
+        assertEquals("NOT_FOUND",commonResponse.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
+        assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
     }
 
 }
