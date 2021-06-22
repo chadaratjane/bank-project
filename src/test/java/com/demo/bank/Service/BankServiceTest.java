@@ -129,7 +129,7 @@ public class BankServiceTest {
     }
 
     @Test
-    public void fail_openBankAccount_NotFoundBranchName(){
+    public void fail_openBankAccount_notFoundBranchName(){
 
         BankBranchesEntity bankBranchesEntity = new BankBranchesEntity();
         bankBranchesEntity.setBranchName("MockBranchName");
@@ -201,6 +201,35 @@ public class BankServiceTest {
 
     }
 
+    @Test
+    public void fail_depositTransaction_notFoundBankAccount(){
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountName("MockAccountName");
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                ("0123456789",AccountStatus.ACTIVATED.getValue())).thenReturn(null);
+
+        BankTransactionRequest bankTransactionRequest = new BankTransactionRequest();
+        bankTransactionRequest.setAccountName("MockAccountName");
+        bankTransactionRequest.setAccountNumber("0123456789");
+        bankTransactionRequest.setAmount(BigDecimal.valueOf(500));
+
+        CommonResponse commonResponse = bankService.depositTransaction(bankTransactionRequest);
+
+        ErrorResponse errorResponse = (ErrorResponse) commonResponse.getData();
+
+        assertEquals("NOT_FOUND",commonResponse.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
+        assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
+
+    }
     
 
 }
