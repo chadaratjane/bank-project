@@ -8,6 +8,7 @@ import com.demo.bank.model.request.BankTransactionRequest;
 import com.demo.bank.model.request.BankTransferRequest;
 import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.BankTransactionResponse;
+import com.demo.bank.model.response.BankTransferResponse;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.model.response.OpenBankAccountResponse;
@@ -16,7 +17,6 @@ import com.demo.bank.repository.BankBranchesRepository;
 import com.demo.bank.repository.BankTransactionsRepository;
 import com.demo.bank.repository.CustomerInformationRepository;
 import com.demo.bank.service.BankService;
-import org.aspectj.lang.annotation.Before;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -316,6 +316,156 @@ public class BankServiceTest {
         assertEquals("NOT_FOUND",commonResponse.getStatus());
         assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
         assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
+
+    }
+
+    @Test
+    public void success_transferTransaction(){
+
+        BankAccountsEntity senderBankAccountsEntity = new BankAccountsEntity();
+        senderBankAccountsEntity.setAccountId(UUID.randomUUID());
+        senderBankAccountsEntity.setAccountBranchId(1);
+        senderBankAccountsEntity.setAccountName("MockSenderAccountName");
+        senderBankAccountsEntity.setAccountNumber("1111111111");
+        senderBankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        senderBankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date senderDate = Calendar.getInstance().getTime();
+        senderBankAccountsEntity.setAccountCreatedDate(senderDate);
+        senderBankAccountsEntity.setAccountUpdatedDate(senderDate);
+
+        BankAccountsEntity receiverBankAccountsEntity = new BankAccountsEntity();
+        receiverBankAccountsEntity.setAccountId(UUID.randomUUID());
+        receiverBankAccountsEntity.setAccountBranchId(2);
+        receiverBankAccountsEntity.setAccountName("MockReceiverAccountName");
+        receiverBankAccountsEntity.setAccountNumber("2222222222");
+        receiverBankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        receiverBankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date receiverDate = Calendar.getInstance().getTime();
+        receiverBankAccountsEntity.setAccountCreatedDate(receiverDate);
+        receiverBankAccountsEntity.setAccountUpdatedDate(receiverDate);
+        Mockito.doReturn(senderBankAccountsEntity,receiverBankAccountsEntity).when(bankAccountsRepository)
+                .findAllByAccountNumberAndAccountStatus(any(),anyString());
+
+        BankTransactionsEntity bankTransactionsEntity = new BankTransactionsEntity();
+        bankTransactionsEntity.setTransactionId(UUID.randomUUID());
+        bankTransactionsEntity.setAccountId(senderBankAccountsEntity.getAccountId());
+        bankTransactionsEntity.setTransactionAccountIdTo(receiverBankAccountsEntity.getAccountId());
+        bankTransactionsEntity.setTransactionAmount(BigDecimal.valueOf(500));
+        bankTransactionsEntity.setTransactionType("TRANSFER");
+        bankTransactionsEntity.setTransactionDate(Calendar.getInstance().getTime());
+        Mockito.when(bankTransactionsRepository.save(any())).thenReturn(bankTransactionsEntity);
+
+        BankAccountsEntity updatedSenderBankAccount = new BankAccountsEntity();
+        updatedSenderBankAccount.setAccountId(senderBankAccountsEntity.getAccountId());
+        updatedSenderBankAccount.setAccountBranchId(senderBankAccountsEntity.getAccountBranchId());
+        updatedSenderBankAccount.setAccountNumber(senderBankAccountsEntity.getAccountNumber());
+        updatedSenderBankAccount.setAccountName(senderBankAccountsEntity.getAccountName());
+        BigDecimal senderAccountBalance = senderBankAccountsEntity.getAccountBalance();
+        BigDecimal updatedSenderAccountBalance = senderAccountBalance.subtract(bankTransactionsEntity.getTransactionAmount());
+        updatedSenderBankAccount.setAccountBalance(updatedSenderAccountBalance);
+        updatedSenderBankAccount.setAccountStatus(senderBankAccountsEntity.getAccountStatus());
+        updatedSenderBankAccount.setAccountCreatedDate(senderBankAccountsEntity.getAccountCreatedDate());
+        updatedSenderBankAccount.setAccountUpdatedDate(Calendar.getInstance().getTime());
+
+        BankAccountsEntity updatedReceiverBankAccount = new BankAccountsEntity();
+        updatedReceiverBankAccount.setAccountId(receiverBankAccountsEntity.getAccountId());
+        updatedReceiverBankAccount.setAccountBranchId(receiverBankAccountsEntity.getAccountBranchId());
+        updatedReceiverBankAccount.setAccountNumber(receiverBankAccountsEntity.getAccountNumber());
+        updatedReceiverBankAccount.setAccountName(receiverBankAccountsEntity.getAccountName());
+        BigDecimal receiverAccountBalance = receiverBankAccountsEntity.getAccountBalance();
+        BigDecimal updatedReceiverAccountBalance = receiverAccountBalance.add(bankTransactionsEntity.getTransactionAmount());
+        updatedReceiverBankAccount.setAccountBalance(updatedReceiverAccountBalance);
+        updatedReceiverBankAccount.setAccountStatus(receiverBankAccountsEntity.getAccountStatus());
+        updatedReceiverBankAccount.setAccountCreatedDate(receiverBankAccountsEntity.getAccountCreatedDate());
+        updatedReceiverBankAccount.setAccountUpdatedDate(Calendar.getInstance().getTime());
+        Mockito.doReturn(updatedSenderBankAccount,updatedReceiverBankAccount).when(bankAccountsRepository).save(any());
+
+        BankTransferRequest bankTransferRequest = new BankTransferRequest();
+        bankTransferRequest.setSenderAccountNumber(senderBankAccountsEntity.getAccountNumber());
+        bankTransferRequest.setReceiverAccountNumber(receiverBankAccountsEntity.getAccountNumber());
+        bankTransferRequest.setAmount(bankTransactionsEntity.getTransactionAmount());
+
+        CommonResponse commonResponse = bankService.transferTransaction(bankTransferRequest);
+
+        BankTransferResponse bankTransferResponse = (BankTransferResponse) commonResponse.getData();
+
+        assertEquals("SUCCESS", commonResponse.getStatus());
+        assertEquals(HttpStatus.CREATED,commonResponse.getHttpStatus());
+        assertEquals(updatedSenderBankAccount.getAccountNumber(),bankTransferResponse.getSenderAccountNumber());
+        assertEquals(updatedReceiverBankAccount.getAccountNumber(),bankTransferResponse.getReceiverAccountNumber());
+        assertEquals(bankTransactionsEntity.getTransactionAmount(),bankTransferResponse.getAmount());
+        assertEquals(updatedSenderBankAccount.getAccountBalance(),bankTransferResponse.getSenderAccountBalance());
+        assertEquals(bankTransactionsEntity.getTransactionDate(),bankTransferResponse.getTransactionDate());
+
+    }
+
+    @Test
+    public void fail_transferTransaction_notFoundSenderBankAccount(){
+
+        BankAccountsEntity senderBankAccountsEntity = new BankAccountsEntity();
+        senderBankAccountsEntity.setAccountId(UUID.randomUUID());
+        senderBankAccountsEntity.setAccountBranchId(1);
+        senderBankAccountsEntity.setAccountName("MockSenderAccountName");
+        senderBankAccountsEntity.setAccountNumber("1111111111");
+        senderBankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        senderBankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date senderDate = Calendar.getInstance().getTime();
+        senderBankAccountsEntity.setAccountCreatedDate(senderDate);
+        senderBankAccountsEntity.setAccountUpdatedDate(senderDate);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                ("1111111111",AccountStatus.ACTIVATED.getValue())).thenReturn(null);
+
+        BankTransferRequest bankTransferRequest = new BankTransferRequest();
+        bankTransferRequest.setSenderAccountNumber(senderBankAccountsEntity.getAccountNumber());
+
+        CommonResponse commonResponse = bankService.transferTransaction(bankTransferRequest);
+
+        ErrorResponse errorResponse = (ErrorResponse) commonResponse.getData();
+
+        assertEquals("NOT_FOUND",commonResponse.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
+        assertEquals("SENDER BANK ACCOUNT NOT FOUND",errorResponse.getError());
+
+    }
+
+    @Test
+    public void fail_transferTransaction_notFoundReceiverBankAccount(){
+
+        BankAccountsEntity senderBankAccountsEntity = new BankAccountsEntity();
+        senderBankAccountsEntity.setAccountId(UUID.randomUUID());
+        senderBankAccountsEntity.setAccountBranchId(1);
+        senderBankAccountsEntity.setAccountName("MockSenderAccountName");
+        senderBankAccountsEntity.setAccountNumber("1111111111");
+        senderBankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        senderBankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date senderDate = Calendar.getInstance().getTime();
+        senderBankAccountsEntity.setAccountCreatedDate(senderDate);
+        senderBankAccountsEntity.setAccountUpdatedDate(senderDate);
+
+        BankAccountsEntity receiverBankAccountsEntity = new BankAccountsEntity();
+        receiverBankAccountsEntity.setAccountId(UUID.randomUUID());
+        receiverBankAccountsEntity.setAccountBranchId(2);
+        receiverBankAccountsEntity.setAccountName("MockReceiverAccountName");
+        receiverBankAccountsEntity.setAccountNumber("2222222222");
+        receiverBankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        receiverBankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date receiverDate = Calendar.getInstance().getTime();
+        receiverBankAccountsEntity.setAccountCreatedDate(receiverDate);
+        receiverBankAccountsEntity.setAccountUpdatedDate(receiverDate);
+        Mockito.doReturn(senderBankAccountsEntity,null).when(bankAccountsRepository)
+                .findAllByAccountNumberAndAccountStatus(any(),anyString());
+
+        BankTransferRequest bankTransferRequest = new BankTransferRequest();
+        bankTransferRequest.setSenderAccountNumber(senderBankAccountsEntity.getAccountNumber());
+        bankTransferRequest.setReceiverAccountNumber(receiverBankAccountsEntity.getAccountNumber());
+
+        CommonResponse commonResponse = bankService.transferTransaction(bankTransferRequest);
+
+        ErrorResponse errorResponse = (ErrorResponse) commonResponse.getData();
+
+        assertEquals("NOT_FOUND",commonResponse.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
+        assertEquals("RECEIVER BANK ACCOUNT NOT FOUND",errorResponse.getError());
 
     }
 
