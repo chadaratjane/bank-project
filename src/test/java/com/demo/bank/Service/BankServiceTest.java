@@ -12,6 +12,7 @@ import com.demo.bank.model.response.BankTransferResponse;
 import com.demo.bank.model.response.CloseBankAccountResponse;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
+import com.demo.bank.model.response.GetAllBankAccountResponse;
 import com.demo.bank.model.response.OpenBankAccountResponse;
 import com.demo.bank.repository.BankAccountsRepository;
 import com.demo.bank.repository.BankBranchesRepository;
@@ -29,8 +30,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
@@ -541,4 +544,85 @@ public class BankServiceTest {
         assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
     }
 
+    @Test
+    public void success_gelAllBankAccount(){
+
+        BankAccountsEntity bankAccountsEntity1 = new BankAccountsEntity();
+        bankAccountsEntity1.setAccountId(UUID.randomUUID());
+        bankAccountsEntity1.setAccountBranchId(1);
+        bankAccountsEntity1.setAccountName("MockAccountName1");
+        bankAccountsEntity1.setAccountNumber("8888888888");
+        bankAccountsEntity1.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity1.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity1.setAccountCreatedDate(date);
+        bankAccountsEntity1.setAccountUpdatedDate(date);
+
+        BankAccountsEntity bankAccountsEntity2 = new BankAccountsEntity();
+        bankAccountsEntity2.setAccountId(UUID.randomUUID());
+        bankAccountsEntity2.setAccountBranchId(2);
+        bankAccountsEntity2.setAccountName("MockAccountName2");
+        bankAccountsEntity2.setAccountNumber("9999999999");
+        bankAccountsEntity2.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity2.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        date = Calendar.getInstance().getTime();
+        bankAccountsEntity2.setAccountCreatedDate(date);
+        bankAccountsEntity2.setAccountUpdatedDate(date);
+
+        BankBranchesEntity bankBranchesEntity1 = new BankBranchesEntity();
+        bankBranchesEntity1.setBranchId(1);
+        bankBranchesEntity1.setBranchName("Mock Branch Name1");
+        bankBranchesEntity1.setBranchCity("Mock City1");
+        bankBranchesEntity1.setBranchAsset(BigDecimal.valueOf(0));
+        bankBranchesEntity1.setBranchCreatedDate(Calendar.getInstance().getTime());
+
+        BankBranchesEntity bankBranchesEntity2 = new BankBranchesEntity();
+        bankBranchesEntity2.setBranchId(2);
+        bankBranchesEntity2.setBranchName("Mock Branch Name2");
+        bankBranchesEntity2.setBranchCity("Mock City2");
+        bankBranchesEntity2.setBranchAsset(BigDecimal.valueOf(0));
+        bankBranchesEntity2.setBranchCreatedDate(Calendar.getInstance().getTime());
+
+        List<BankAccountsEntity> bankAccountsEntityList = new ArrayList<>();
+        bankAccountsEntityList.add(bankAccountsEntity1);
+        bankAccountsEntityList.add(bankAccountsEntity2);
+        Mockito.when(bankAccountsRepository.findAllByAccountStatus(anyString())).thenReturn(bankAccountsEntityList);
+
+        List<BankBranchesEntity> bankBranchesEntityList = new ArrayList<>();
+        bankBranchesEntityList.add(bankBranchesEntity1);
+        bankBranchesEntityList.add(bankBranchesEntity2);
+        Mockito.doReturn(bankBranchesEntity1,bankBranchesEntity2).when(bankBranchesRepository).findAllByBranchId(any());
+
+        CommonResponse commonResponse = bankService.getAllBankAccount();
+
+        List<GetAllBankAccountResponse> getAllResponseList =  (List<GetAllBankAccountResponse>) commonResponse.getData();
+
+        assertEquals("SUCCESS", commonResponse.getStatus());
+        assertEquals(HttpStatus.OK, commonResponse.getHttpStatus());
+
+        assertEquals(bankAccountsEntityList.size(), getAllResponseList.size());
+        for (int i = 0; i < bankAccountsEntityList.size(); i++) {
+
+            assertEquals(bankAccountsEntityList.get(i).getAccountName(), getAllResponseList.get(i).getAccountName());
+            assertEquals(bankAccountsEntityList.get(i).getAccountNumber(), getAllResponseList.get(i).getAccountNumber());
+            assertEquals(bankBranchesEntityList.get(i).getBranchName(),getAllResponseList.get(i).getBranchName());
+            assertEquals(bankAccountsEntityList.get(i).getAccountBalance(),getAllResponseList.get(i).getAccountBalance());
+        }
+
+    }
+
+    @Test
+    public void fail_getAllBankAccount(){
+
+        List<BankAccountsEntity> bankAccountsEntityList = new ArrayList<>();
+
+        Mockito.when(bankAccountsRepository.findAllByAccountStatus(any())).thenReturn(null);
+
+        CommonResponse commonResponse = bankService.getAllBankAccount();
+
+        List<GetAllBankAccountResponse> getAllBankAccountResponseList = (List<GetAllBankAccountResponse>) commonResponse.getData();
+
+        assertEquals(bankAccountsEntityList,getAllBankAccountResponseList);
+
+    }
 }
