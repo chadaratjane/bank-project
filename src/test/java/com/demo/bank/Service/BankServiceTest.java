@@ -13,6 +13,8 @@ import com.demo.bank.model.response.CloseBankAccountResponse;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.model.response.GetAllBankAccountResponse;
+import com.demo.bank.model.response.GetAllTransactionContentsResponse;
+import com.demo.bank.model.response.GetAllTransactionPageResponse;
 import com.demo.bank.model.response.OpenBankAccountResponse;
 import com.demo.bank.repository.BankAccountsRepository;
 import com.demo.bank.repository.BankBranchesRepository;
@@ -26,6 +28,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -34,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -624,5 +629,101 @@ public class BankServiceTest {
 
         assertEquals(bankAccountsEntityList,getAllBankAccountResponseList);
 
+    }
+
+    @Test
+    public void success_getAllBankTransaction_sortDirectionIsAsc(){
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountName("MockAccountName");
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                (anyString(),anyString())).thenReturn(bankAccountsEntity);
+
+        BankTransactionsEntity bankTransactionsEntity1 = new BankTransactionsEntity();
+        bankTransactionsEntity1.setTransactionId(UUID.randomUUID());
+        bankTransactionsEntity1.setAccountId(UUID.randomUUID());
+        bankTransactionsEntity1.setTransactionAmount(BigDecimal.valueOf(500));
+        bankTransactionsEntity1.setTransactionType("WITHDRAW");
+        bankTransactionsEntity1.setTransactionDate(Calendar.getInstance().getTime());
+
+        BankTransactionsEntity bankTransactionsEntity2 = new BankTransactionsEntity();
+        bankTransactionsEntity2.setTransactionId(UUID.randomUUID());
+        bankTransactionsEntity2.setAccountId(UUID.randomUUID());
+        bankTransactionsEntity2.setTransactionAmount(BigDecimal.valueOf(500));
+        bankTransactionsEntity2.setTransactionType("DEPOSIT");
+        bankTransactionsEntity2.setTransactionDate(Calendar.getInstance().getTime());
+
+        BankTransactionsEntity bankTransactionsEntity3 = new BankTransactionsEntity();
+        bankTransactionsEntity3.setTransactionId(UUID.randomUUID());
+        bankTransactionsEntity3.setAccountId(UUID.randomUUID());
+        bankTransactionsEntity3.setTransactionAccountIdTo(UUID.randomUUID());
+        bankTransactionsEntity3.setTransactionAmount(BigDecimal.valueOf(500));
+        bankTransactionsEntity3.setTransactionType("TRANSFER");
+        bankTransactionsEntity3.setTransactionDate(Calendar.getInstance().getTime());
+
+        List<BankTransactionsEntity> bankTransactionsList = new ArrayList<>();
+        bankTransactionsList.add(bankTransactionsEntity1);
+        bankTransactionsList.add(bankTransactionsEntity2);
+        bankTransactionsList.add(bankTransactionsEntity3);
+
+        Page<BankTransactionsEntity> pageResult = new PageImpl<>(bankTransactionsList);
+        Mockito.when(bankTransactionsRepository.findAllByAccountIdAndDate(any(),any(),any(), any()))
+                .thenReturn(pageResult);
+
+        BankAccountsEntity receiverBankAccount = new BankAccountsEntity();
+        receiverBankAccount.setAccountId(UUID.randomUUID());
+        receiverBankAccount.setAccountBranchId(1);
+        receiverBankAccount.setAccountName("MockAccountName");
+        receiverBankAccount.setAccountNumber("0123456789");
+        receiverBankAccount.setAccountBalance(BigDecimal.ZERO);
+        receiverBankAccount.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        date = Calendar.getInstance().getTime();
+        receiverBankAccount.setAccountCreatedDate(date);
+        receiverBankAccount.setAccountUpdatedDate(date);
+        Mockito.doReturn(Optional.of(receiverBankAccount)).when(bankAccountsRepository).findById(any());
+
+        GetAllTransactionPageResponse expectedPageResponse = new GetAllTransactionPageResponse();
+        expectedPageResponse.setTotalItem(3);
+        expectedPageResponse.setCurrentPage(1);
+        expectedPageResponse.setTotalPage(1);
+
+        CommonResponse commonResponse = bankService.getAllTransaction("0123456789",Calendar.getInstance().getTime(),
+                Calendar.getInstance().getTime(), "ASC",1,10);
+
+        GetAllTransactionPageResponse getAllPageResponse = (GetAllTransactionPageResponse) commonResponse.getData();
+        List<GetAllTransactionContentsResponse> getAllContentsResponseList = getAllPageResponse.getContents();
+
+        assertEquals("SUCCESS",commonResponse.getStatus());
+        assertEquals(HttpStatus.OK,commonResponse.getHttpStatus());
+        assertEquals(expectedPageResponse.getTotalItem(),getAllPageResponse.getTotalItem());
+        assertEquals(expectedPageResponse.getCurrentPage(),getAllPageResponse.getCurrentPage());
+        assertEquals(expectedPageResponse.getTotalPage(),getAllPageResponse.getTotalPage());
+
+        assertEquals(bankTransactionsList.size(), getAllContentsResponseList.size());
+
+        List<BankAccountsEntity> expectedReceiverBankAccountList = new ArrayList<>();
+        expectedReceiverBankAccountList.add(receiverBankAccount);
+
+        for (int i = 0; i < bankTransactionsList.size(); i++) {
+
+            assertEquals(bankTransactionsList.get(i).getTransactionDate(), getAllContentsResponseList.get(i).getTransactionDate());
+            assertEquals(bankTransactionsList.get(i).getTransactionAmount(), getAllContentsResponseList.get(i).getAmount());
+            assertEquals(bankTransactionsList.get(i).getTransactionType(), getAllContentsResponseList.get(i).getTransactionType());
+            if (getAllContentsResponseList.get(i).getTransactionType().equals("TRANSFER")) {
+                for (int j = 0; j < expectedReceiverBankAccountList.size(); j++) {
+                    assertEquals(expectedReceiverBankAccountList.get(j).getAccountName(), getAllContentsResponseList.get(i).getReceiverAccountName());
+                    String receiverAccountNumber = "XXXXX" + expectedReceiverBankAccountList.get(j).getAccountNumber().substring(5, 10);
+                    assertEquals(receiverAccountNumber, getAllContentsResponseList.get(i).getReceiverAccountNumber());
+                }
+            }
+        }
     }
 }
