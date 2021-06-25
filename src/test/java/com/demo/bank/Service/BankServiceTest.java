@@ -726,4 +726,100 @@ public class BankServiceTest {
             }
         }
     }
+
+    @Test
+    public void success_getAllBankTransaction_sortDirectionIsDESC(){
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountName("MockAccountName");
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                (anyString(),anyString())).thenReturn(bankAccountsEntity);
+
+        BankTransactionsEntity bankTransactionsEntity1 = new BankTransactionsEntity();
+        bankTransactionsEntity1.setTransactionId(UUID.randomUUID());
+        bankTransactionsEntity1.setAccountId(UUID.randomUUID());
+        bankTransactionsEntity1.setTransactionAmount(BigDecimal.valueOf(500));
+        bankTransactionsEntity1.setTransactionType("DEPOSIT");
+        bankTransactionsEntity1.setTransactionDate(Calendar.getInstance().getTime());
+
+        BankTransactionsEntity bankTransactionsEntity2 = new BankTransactionsEntity();
+        bankTransactionsEntity2.setTransactionId(UUID.randomUUID());
+        bankTransactionsEntity2.setAccountId(UUID.randomUUID());
+        bankTransactionsEntity2.setTransactionAmount(BigDecimal.valueOf(500));
+        bankTransactionsEntity2.setTransactionType("WITHDRAW");
+        bankTransactionsEntity2.setTransactionDate(Calendar.getInstance().getTime());
+
+        BankTransactionsEntity bankTransactionsEntity3 = new BankTransactionsEntity();
+        bankTransactionsEntity3.setTransactionId(UUID.randomUUID());
+        bankTransactionsEntity3.setAccountId(UUID.randomUUID());
+        bankTransactionsEntity3.setTransactionAccountIdTo(UUID.randomUUID());
+        bankTransactionsEntity3.setTransactionAmount(BigDecimal.valueOf(500));
+        bankTransactionsEntity3.setTransactionType("TRANSFER");
+        bankTransactionsEntity3.setTransactionDate(Calendar.getInstance().getTime());
+
+        List<BankTransactionsEntity> bankTransactionsEntityList = new ArrayList<>();
+        bankTransactionsEntityList.add(bankTransactionsEntity1);
+        bankTransactionsEntityList.add(bankTransactionsEntity2);
+        bankTransactionsEntityList.add(bankTransactionsEntity3);
+
+        Page<BankTransactionsEntity> pageResult = new PageImpl<>(bankTransactionsEntityList);
+        Mockito.when(bankTransactionsRepository.findAllByAccountIdAndDate(any(),any(),any(),any())).thenReturn(pageResult);
+
+        GetAllTransactionPageResponse expectedGetAllPageResponse = new GetAllTransactionPageResponse();
+        expectedGetAllPageResponse.setTotalItem(3);
+        expectedGetAllPageResponse.setCurrentPage(1);
+        expectedGetAllPageResponse.setTotalPage(1);
+
+        BankAccountsEntity receiverBankAccount = new BankAccountsEntity();
+        receiverBankAccount.setAccountId(UUID.randomUUID());
+        receiverBankAccount.setAccountBranchId(1);
+        receiverBankAccount.setAccountName("MockAccountName");
+        receiverBankAccount.setAccountNumber("0123456789");
+        receiverBankAccount.setAccountBalance(BigDecimal.ZERO);
+        receiverBankAccount.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        date = Calendar.getInstance().getTime();
+        receiverBankAccount.setAccountCreatedDate(date);
+        receiverBankAccount.setAccountUpdatedDate(date);
+        Mockito.doReturn(Optional.of(receiverBankAccount)).when(bankAccountsRepository).findById(any());
+
+        CommonResponse commonResponse = bankService.getAllTransaction("0123456789",Calendar.getInstance().getTime(),
+                Calendar.getInstance().getTime(),"DESC",1,10);
+
+        GetAllTransactionPageResponse getAllTransactionPageResponse = (GetAllTransactionPageResponse) commonResponse.getData();
+
+        List<GetAllTransactionContentsResponse> getAllContentsResponseList = getAllTransactionPageResponse.getContents();
+
+        assertEquals("SUCCESS",commonResponse.getStatus());
+        assertEquals(HttpStatus.OK,commonResponse.getHttpStatus());
+        assertEquals(expectedGetAllPageResponse.getTotalItem(),getAllTransactionPageResponse.getTotalItem());
+        assertEquals(expectedGetAllPageResponse.getCurrentPage(),getAllTransactionPageResponse.getCurrentPage());
+        assertEquals(expectedGetAllPageResponse.getTotalPage(),getAllTransactionPageResponse.getTotalPage());
+
+        List<BankAccountsEntity> expectedReceiverBankAccountsList = new ArrayList<>();
+        expectedReceiverBankAccountsList.add(receiverBankAccount);
+
+        assertEquals(bankTransactionsEntityList.size(), getAllContentsResponseList.size());
+        for (int i = 0; i < bankTransactionsEntityList.size(); i++) {
+
+            assertEquals(bankTransactionsEntityList.get(i).getTransactionDate(), getAllContentsResponseList.get(i).getTransactionDate());
+            assertEquals(bankTransactionsEntityList.get(i).getTransactionAmount(), getAllContentsResponseList.get(i).getAmount());
+            assertEquals(bankTransactionsEntityList.get(i).getTransactionType(), getAllContentsResponseList.get(i).getTransactionType());
+
+            if (getAllContentsResponseList.get(i).getTransactionType().equals("TRANSFER")) {
+                for (int j = 0; j < expectedReceiverBankAccountsList.size(); j++) {
+                    String receiverAccountNumber = "XXXXX" + expectedReceiverBankAccountsList.get(j).getAccountNumber().substring(5, 10);
+                    assertEquals(receiverAccountNumber, getAllContentsResponseList.get(i).getReceiverAccountNumber());
+                    assertEquals(expectedReceiverBankAccountsList.get(j).getAccountName(), getAllContentsResponseList.get(i).getReceiverAccountName());
+                }
+            }
+        }
+    }
 }
