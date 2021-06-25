@@ -822,4 +822,73 @@ public class BankServiceTest {
             }
         }
     }
+
+    @Test
+    public void fail_getAllBankTransaction_noDataToRetrieve(){
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountName("MockAccountName");
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                (anyString(),anyString())).thenReturn(bankAccountsEntity);
+
+        List<BankTransactionsEntity> bankTransactionsEntityList = new ArrayList<>();
+
+        Page<BankTransactionsEntity> pageResult = new PageImpl<>(bankTransactionsEntityList);
+        Mockito.when(bankTransactionsRepository.findAllByAccountIdAndDate(any(), any(), any(), any())).thenReturn(pageResult);
+
+        CommonResponse commonResponse = bankService.getAllTransaction("0123456789", Calendar.getInstance().getTime(),
+                Calendar.getInstance().getTime(), "ASC", 1, 10);
+
+        GetAllTransactionPageResponse getPageResponse = (GetAllTransactionPageResponse) commonResponse.getData();
+
+        List<GetAllTransactionContentsResponse> getContentsResponse = getPageResponse.getContents();
+
+        assertEquals("SUCCESS", commonResponse.getStatus());
+        assertEquals(HttpStatus.OK, commonResponse.getHttpStatus());
+
+        assertEquals(bankTransactionsEntityList.size(),getContentsResponse.size());
+        for (int i =0;i<bankTransactionsEntityList.size();i++){
+
+            assertEquals(bankTransactionsEntityList.get(i).getTransactionDate(),getContentsResponse.get(i).getTransactionDate());
+            assertEquals(bankTransactionsEntityList.get(i).getTransactionAmount(),getContentsResponse.get(i).getAmount());
+            assertEquals(bankTransactionsEntityList.get(i).getTransactionType(),getContentsResponse.get(i).getTransactionType());
+
+        }
+    }
+
+    @Test
+    public void fail_getAllBankTransaction_notFoundBankAccount(){
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountName("MockAccountName");
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                (anyString(),anyString())).thenReturn(null);
+
+        CommonResponse commonResponse = bankService.getAllTransaction("0123456789", Calendar.getInstance().getTime(),
+                Calendar.getInstance().getTime(), "ASC", 1, 10);
+
+        ErrorResponse errorResponse = (ErrorResponse) commonResponse.getData();
+
+        assertEquals("NOT_FOUND",commonResponse.getStatus());
+        assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
+        assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
+
+    }
+
 }
