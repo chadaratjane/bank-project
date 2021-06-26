@@ -367,7 +367,7 @@ public class BankService {
                     item.setTransactionDate(tran.getTransactionDate());
                     item.setAmount(tran.getTransactionAmount());
                     item.setTransactionType(tran.getTransactionType());
-                    if (tran.getTransactionType().equals("TRANSFER")) {
+                    if (tran.getTransactionType().equals(TransactionType.TRANSFER.getValue())) {
                         Optional<BankAccountsEntity> bankAccountResultOptional = bankAccountsRepository.findById(tran.getTransactionAccountIdTo());
                         if (bankAccountResultOptional.isPresent()) {
                             BankAccountsEntity bankAccountResult = bankAccountResultOptional.get();
