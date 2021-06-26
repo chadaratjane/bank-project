@@ -51,7 +51,7 @@ public class ErrorHandler {
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setError("DATA ACCESS FAILED");
         commonResponse.setData(errorResponse);
-        commonResponse.setHttpStatus(HttpStatus.REQUEST_TIMEOUT);
+        commonResponse.setHttpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
 

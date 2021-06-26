@@ -2,6 +2,7 @@ package com.demo.bank.service;
 
 import com.demo.bank.constant.AccountStatus;
 import com.demo.bank.constant.Status;
+import com.demo.bank.constant.TransactionType;
 import com.demo.bank.model.entity.BankAccountsEntity;
 import com.demo.bank.model.entity.BankBranchesEntity;
 import com.demo.bank.model.entity.BankTransactionsEntity;
@@ -16,8 +17,8 @@ import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.model.response.GetAllBankAccountResponse;
 import com.demo.bank.model.response.GetAllTransactionContentsResponse;
-import com.demo.bank.model.response.OpenBankAccountResponse;
 import com.demo.bank.model.response.GetAllTransactionPageResponse;
+import com.demo.bank.model.response.OpenBankAccountResponse;
 import com.demo.bank.repository.BankAccountsRepository;
 import com.demo.bank.repository.BankBranchesRepository;
 import com.demo.bank.repository.BankTransactionsRepository;
@@ -32,6 +33,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
@@ -59,6 +61,8 @@ public class BankService {
 
     @Value("${openaccount.random.max.attempt}")
     private Integer openAccountAttempt;
+
+    private static final String ACCOUNT_NOTFOUND_ERROR = "BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS";
 
     public CommonResponse openBankAccount(OpenBankAccountRequest request) {
         BankBranchesEntity findBranch = bankBranchesRepository.findAllByBranchName(request.getBranchName());
@@ -121,6 +125,7 @@ public class BankService {
 
     }
 
+    @Transactional(rollbackFor = {Exception.class})
     public CommonResponse depositTransaction(BankTransactionRequest request) {
         BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getAccountNumber(), AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
@@ -139,7 +144,6 @@ public class BankService {
             BigDecimal accountBalance = bankAccountsEntity.getAccountBalance();
             BigDecimal updatedAccountBalance = accountBalance.add(saveEntity.getTransactionAmount());
             bankTransactionResponse.setAccountBalance(updatedAccountBalance);
-            //TODO **fix time** is not Thailand Time in postman response
             bankTransactionResponse.setTransactionDate(saveEntity.getTransactionDate());
             commonResponse.setData(bankTransactionResponse);
             commonResponse.setHttpStatus(HttpStatus.CREATED);
@@ -148,10 +152,10 @@ public class BankService {
             logger.info("UPDATE BANK ACCOUNT SUCCESSFULLY");
 
         } else {
-            logger.error("BANK ACCOUNT NOT FOUND");
+            logger.error("BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS");
             commonResponse.setStatus(Status.NOT_FOUND.getValue());
             ErrorResponse errorResponse = new ErrorResponse();
-            errorResponse.setError("BANK ACCOUNT NOT FOUND");
+            errorResponse.setError(ACCOUNT_NOTFOUND_ERROR);
             commonResponse.setData(errorResponse);
 
             commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
@@ -159,6 +163,7 @@ public class BankService {
         return commonResponse;
     }
 
+    @Transactional(rollbackFor = {Exception.class})
     public CommonResponse withdrawTransaction(BankTransactionRequest request) {
         BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getAccountNumber(), AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
@@ -169,27 +174,27 @@ public class BankService {
             BankTransactionsEntity saveEntity = bankTransactionsRepository.save(bankTransactionsEntity);
 
             logger.info("WITHDRAW TRANSACTION SUCCESSFULLY");
+            BigDecimal accountBalance = bankAccountsEntity.getAccountBalance();
+            BigDecimal updatedAccountBalance = accountBalance.subtract(saveEntity.getTransactionAmount());
+
+            bankAccountsRepository.save(updateBankAccountsEntity(bankAccountsEntity, updatedAccountBalance));
+            logger.info("UPDATE BANK ACCOUNT SUCCESSFULLY");
+
             commonResponse.setStatus(Status.SUCCESS.getValue());
             BankTransactionResponse bankTransactionResponse = new BankTransactionResponse();
             bankTransactionResponse.setAccountName(bankAccountsEntity.getAccountName());
             bankTransactionResponse.setAccountNumber(bankAccountsEntity.getAccountNumber());
             bankTransactionResponse.setAmount(saveEntity.getTransactionAmount());
-            BigDecimal accountBalance = bankAccountsEntity.getAccountBalance();
-            BigDecimal updatedAccountBalance = accountBalance.subtract(saveEntity.getTransactionAmount());
             bankTransactionResponse.setAccountBalance(updatedAccountBalance);
-            //TODO **fix time** is not Thailand Time in postman response
             bankTransactionResponse.setTransactionDate(saveEntity.getTransactionDate());
             commonResponse.setData(bankTransactionResponse);
             commonResponse.setHttpStatus(HttpStatus.CREATED);
 
-            bankAccountsRepository.save(updateBankAccountsEntity(bankAccountsEntity, updatedAccountBalance));
-            logger.info("UPDATE BANK ACCOUNT SUCCESSFULLY");
-
-        }else {
-            logger.error("BANK ACCOUNT NOT FOUND");
+        } else {
+            logger.error("BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS");
             commonResponse.setStatus(Status.NOT_FOUND.getValue());
             ErrorResponse errorResponse = new ErrorResponse();
-            errorResponse.setError("BANK ACCOUNT NOT FOUND");
+            errorResponse.setError(ACCOUNT_NOTFOUND_ERROR);
             commonResponse.setData(errorResponse);
             commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
         }
@@ -197,6 +202,7 @@ public class BankService {
         return commonResponse;
     }
 
+    @Transactional(rollbackFor = {Exception.class})
     public CommonResponse transferTransaction(BankTransferRequest request) {
         BankAccountsEntity senderBankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getSenderAccountNumber(), AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
@@ -267,10 +273,10 @@ public class BankService {
             commonResponse.setHttpStatus(HttpStatus.OK);
 
         } else {
-            logger.error("BANK ACCOUNT NOT FOUND");
+            logger.error("BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS");
             commonResponse.setStatus(Status.NOT_FOUND.getValue());
             ErrorResponse errorResponse = new ErrorResponse();
-            errorResponse.setError("BANK ACCOUNT NOT FOUND");
+            errorResponse.setError(ACCOUNT_NOTFOUND_ERROR);
             commonResponse.setData(errorResponse);
             commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
 
@@ -363,10 +369,10 @@ public class BankService {
             }
 
         } else {
-            logger.info("BANK ACCOUNT NOT FOUND");
+            logger.info("BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS");
             commonResponse.setStatus(Status.NOT_FOUND.getValue());
             ErrorResponse errorResponse = new ErrorResponse();
-            errorResponse.setError("BANK ACCOUNT NOT FOUND");
+            errorResponse.setError(ACCOUNT_NOTFOUND_ERROR);
             commonResponse.setData(errorResponse);
             commonResponse.setHttpStatus(HttpStatus.NOT_FOUND);
 
@@ -403,7 +409,7 @@ public class BankService {
         bankTransactionsEntity.setAccountId(senderBankAccountsEntity.getAccountId());
         bankTransactionsEntity.setTransactionAccountIdTo(receiverBankAccountsEntity.getAccountId());
         bankTransactionsEntity.setTransactionAmount(request.getAmount());
-        bankTransactionsEntity.setTransactionType("TRANSFER");
+        bankTransactionsEntity.setTransactionType(TransactionType.TRANSFER.getValue());
         bankTransactionsEntity.setTransactionDate(Calendar.getInstance().getTime());
         return bankTransactionsEntity;
     }
@@ -413,7 +419,7 @@ public class BankService {
         bankTransactionsEntity.setTransactionId(UUID.randomUUID());
         bankTransactionsEntity.setAccountId(bankAccountsEntity.getAccountId());
         bankTransactionsEntity.setTransactionAmount(request.getAmount());
-        bankTransactionsEntity.setTransactionType("WITHDRAW");
+        bankTransactionsEntity.setTransactionType(TransactionType.WITHDRAW.getValue());
         bankTransactionsEntity.setTransactionDate(Calendar.getInstance().getTime());
         return bankTransactionsEntity;
     }
@@ -436,7 +442,7 @@ public class BankService {
         bankTransactionsEntity.setTransactionId(UUID.randomUUID());
         bankTransactionsEntity.setAccountId(bankAccountsEntity.getAccountId());
         bankTransactionsEntity.setTransactionAmount(request.getAmount());
-        bankTransactionsEntity.setTransactionType("DEPOSIT");
+        bankTransactionsEntity.setTransactionType(TransactionType.DEPOSIT.getValue());
         bankTransactionsEntity.setTransactionDate(Calendar.getInstance().getTime());
         return bankTransactionsEntity;
     }

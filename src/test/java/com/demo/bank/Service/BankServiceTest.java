@@ -238,7 +238,7 @@ public class BankServiceTest {
 
         assertEquals("NOT_FOUND",commonResponse.getStatus());
         assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
-        assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
+        assertEquals("BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS",errorResponse.getError());
 
     }
 
@@ -324,7 +324,7 @@ public class BankServiceTest {
 
         assertEquals("NOT_FOUND",commonResponse.getStatus());
         assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
-        assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
+        assertEquals("BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS",errorResponse.getError());
 
     }
 
@@ -546,7 +546,7 @@ public class BankServiceTest {
 
         assertEquals("NOT_FOUND",commonResponse.getStatus());
         assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
-        assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
+        assertEquals("BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS",errorResponse.getError());
     }
 
     @Test
@@ -887,8 +887,7 @@ public class BankServiceTest {
 
         assertEquals("NOT_FOUND",commonResponse.getStatus());
         assertEquals(HttpStatus.NOT_FOUND,commonResponse.getHttpStatus());
-        assertEquals("BANK ACCOUNT NOT FOUND",errorResponse.getError());
+        assertEquals("BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS",errorResponse.getError());
 
     }
-
 }
