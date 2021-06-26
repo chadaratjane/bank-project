@@ -1,7 +1,6 @@
 package com.demo.bank.model.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonIncludeProperties;
 
 import java.math.BigDecimal;
 import java.util.Date;

@@ -51,8 +51,8 @@ public class BankTransferRequest {
     @Override
     public String toString() {
         return "BankTransferRequest{" +
-                ", senderAccountNumber='" + "XXXXX" + senderAccountNumber.substring(5,10)+ '\'' +
-                ", receiverAccountNumber='" + "XXXXX" + receiverAccountNumber.substring(5,10)+ '\'' +
+                ", senderAccountNumber='" + senderAccountNumber+ '\'' +
+                ", receiverAccountNumber='" + receiverAccountNumber+ '\'' +
                 ", amount=" + amount +
                 '}';
     }

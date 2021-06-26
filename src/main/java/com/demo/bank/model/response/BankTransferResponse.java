@@ -5,11 +5,14 @@ import java.util.Date;
 
 public class BankTransferResponse {
 
+    private String senderAccountName;
     private String senderAccountNumber;
+    private String receiverAccountName;
     private String receiverAccountNumber;
     private BigDecimal amount;
     private  BigDecimal SenderAccountBalance;
     private Date transactionDate;
+
 
     public String getSenderAccountNumber() {
         return senderAccountNumber;
@@ -51,11 +54,29 @@ public class BankTransferResponse {
         this.transactionDate = transactionDate;
     }
 
+    public String getSenderAccountName() {
+        return senderAccountName;
+    }
+
+    public void setSenderAccountName(String senderAccountName) {
+        this.senderAccountName = senderAccountName;
+    }
+
+    public String getReceiverAccountName() {
+        return receiverAccountName;
+    }
+
+    public void setReceiverAccountName(String receiverAccountName) {
+        this.receiverAccountName = receiverAccountName;
+    }
+
     @Override
     public String toString() {
         return "BankTransferResponse{" +
-                "senderAccountNumber='" + "XXXXX" +senderAccountNumber.substring(5,10) + '\'' +
-                ", receiverAccountNumber='" + "XXXXX" + receiverAccountNumber.substring(5,10) + '\'' +
+                "senderAccountName='" + senderAccountName + '\'' +
+                ", senderAccountNumber='" + senderAccountNumber+ '\'' +
+                ", receiverAccountName='" + receiverAccountName + '\'' +
+                ", receiverAccountNumber='" + receiverAccountNumber + '\'' +
                 ", amount=" + amount +
                 ", SenderAccountBalance=" + SenderAccountBalance +
                 ", transactionDate=" + transactionDate +

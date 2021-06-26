@@ -3,6 +3,7 @@ package com.demo.bank.service;
 import com.demo.bank.constant.AccountStatus;
 import com.demo.bank.constant.Status;
 import com.demo.bank.constant.TransactionType;
+import com.demo.bank.exception.ValidateException;
 import com.demo.bank.model.entity.BankAccountsEntity;
 import com.demo.bank.model.entity.BankBranchesEntity;
 import com.demo.bank.model.entity.BankTransactionsEntity;
@@ -64,6 +65,7 @@ public class BankService {
 
     private static final String ACCOUNT_NOTFOUND_ERROR = "BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS";
 
+    @Transactional(rollbackFor = {Exception.class})
     public CommonResponse openBankAccount(OpenBankAccountRequest request) {
         BankBranchesEntity findBranch = bankBranchesRepository.findAllByBranchName(request.getBranchName());
         CommonResponse commonResponse = new CommonResponse();
@@ -166,9 +168,12 @@ public class BankService {
     @Transactional(rollbackFor = {Exception.class})
     public CommonResponse withdrawTransaction(BankTransactionRequest request) {
         BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getAccountNumber(), AccountStatus.ACTIVATED.getValue());
+
         CommonResponse commonResponse = new CommonResponse();
         if (bankAccountsEntity != null) {
             logger.info("BANK ACCOUNT FOUND");
+            //TODO Add Error on withdraw amount > account balance
+
             BankTransactionsEntity bankTransactionsEntity = prepareWithdrawTransactionEntity(request, bankAccountsEntity);
 
             BankTransactionsEntity saveEntity = bankTransactionsRepository.save(bankTransactionsEntity);
@@ -204,9 +209,14 @@ public class BankService {
 
     @Transactional(rollbackFor = {Exception.class})
     public CommonResponse transferTransaction(BankTransferRequest request) {
+        if (request.getSenderAccountNumber().equals(request.getReceiverAccountNumber())){
+            throw new ValidateException("DUPLICATE SENDER AND RECEIVER BANK ACCOUNT","DUPLICATE SENDER AND RECEIVER BANK ACCOUNT");
+        }
         BankAccountsEntity senderBankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getSenderAccountNumber(), AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
         if (senderBankAccountsEntity != null) {
+            //TODO Add Error on transfer amount > sender account balance
+
             BankAccountsEntity receiverBankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getReceiverAccountNumber(), AccountStatus.ACTIVATED.getValue());
             if (receiverBankAccountsEntity != null) {
                 logger.info("FOUND SENDER AND RECEIVER BANK ACCOUNT");
@@ -251,12 +261,14 @@ public class BankService {
         return commonResponse;
     }
 
+    @Transactional(rollbackFor = {Exception.class})
     public CommonResponse closeBankAccount(String accountNumber) {
         BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(accountNumber, AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
 
         if (bankAccountsEntity != null) {
             logger.info("BANK ACCOUNT FOUND");
+            //TODO add withdraw method step
             BankAccountsEntity entity = prepareCloseBankAccountsEntity(bankAccountsEntity);
 
             BankAccountsEntity saveEntity = bankAccountsRepository.save(entity);
@@ -268,6 +280,7 @@ public class BankService {
             closeBankAccountResponse.setAccountNumber(saveEntity.getAccountNumber());
             BankBranchesEntity findBranchName = bankBranchesRepository.findAllByBranchId(saveEntity.getAccountBranchId());
             closeBankAccountResponse.setBranchName(findBranchName.getBranchName());
+            //TODO add response on return balance, how much they should receive
             closeBankAccountResponse.setAccountStatus(saveEntity.getAccountStatus());
             commonResponse.setData(closeBankAccountResponse);
             commonResponse.setHttpStatus(HttpStatus.OK);
@@ -310,7 +323,8 @@ public class BankService {
         return commonResponse;
     }
 
-    public CommonResponse getAllTransaction(String accountNumber, Date dateFrom, Date dateTo, String sort, Integer pageNumber, Integer perPage) {
+    public CommonResponse getAllTransaction(String accountNumber, Date dateFrom, Date dateTo, String sort, Integer pageNumber, Integer perPage)
+    {
         BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(
                 accountNumber, AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
@@ -357,8 +371,7 @@ public class BankService {
                         Optional<BankAccountsEntity> bankAccountResultOptional = bankAccountsRepository.findById(tran.getTransactionAccountIdTo());
                         if (bankAccountResultOptional.isPresent()) {
                             BankAccountsEntity bankAccountResult = bankAccountResultOptional.get();
-                            String receiverAccountNumber = "XXXXX" + bankAccountResult.getAccountNumber().substring(5, 10);
-                            item.setReceiverAccountNumber(receiverAccountNumber);
+                            item.setReceiverAccountNumber(bankAccountResult.getAccountNumber());
                             item.setReceiverAccountName(bankAccountResult.getAccountName());
                         }
                     }
@@ -382,7 +395,10 @@ public class BankService {
 
     private BankTransferResponse getBankTransferResponse(BankAccountsEntity senderBankAccountsEntity, BankAccountsEntity receiverBankAccountsEntity, BankTransactionsEntity saveEntity, BigDecimal updatedSenderAccountBalance) {
         BankTransferResponse bankTransferResponse = new BankTransferResponse();
+        bankTransferResponse.setSenderAccountName(senderBankAccountsEntity.getAccountName());
+
         bankTransferResponse.setSenderAccountNumber(senderBankAccountsEntity.getAccountNumber());
+        bankTransferResponse.setReceiverAccountName(receiverBankAccountsEntity.getAccountName());
         bankTransferResponse.setReceiverAccountNumber(receiverBankAccountsEntity.getAccountNumber());
         bankTransferResponse.setAmount(saveEntity.getTransactionAmount());
         bankTransferResponse.setSenderAccountBalance(updatedSenderAccountBalance);

@@ -1,7 +1,5 @@
 package com.demo.bank.model.response;
 
-import java.util.UUID;
-
 public class OpenBankAccountResponse {
 
     private String accountName;
@@ -45,7 +43,7 @@ public class OpenBankAccountResponse {
     public String toString() {
         return "BankResponseOpenBankAccount{" +
                 "accountName='" + accountName + '\'' +
-                ", accountNumber='" + "XXXXX" + accountNumber.substring(5,10)+ '\'' +
+                ", accountNumber='" + accountNumber + '\'' +
                 ", branchId=" + branchId +
                 ", branchName='" + branchName + '\'' +
                 '}';

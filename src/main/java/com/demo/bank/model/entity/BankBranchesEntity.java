@@ -3,7 +3,6 @@ package com.demo.bank.model.entity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity(name = "bank_branches")
@@ -18,9 +17,6 @@ public class BankBranchesEntity {
 
     @Column(name = "branch_city")
     private String branchCity;
-
-    @Column(name = "branch_asset")
-    private BigDecimal branchAsset;
 
     @Column(name = "branch_created_date")
     private Date branchCreatedDate;
@@ -48,15 +44,7 @@ public class BankBranchesEntity {
     public void setBranchCity(String branchCity) {
         this.branchCity = branchCity;
     }
-
-    public BigDecimal getBranchAsset() {
-        return branchAsset;
-    }
-
-    public void setBranchAsset(BigDecimal branchAsset) {
-        this.branchAsset = branchAsset;
-    }
-
+    
     public Date getBranchCreatedDate() {
         return branchCreatedDate;
     }

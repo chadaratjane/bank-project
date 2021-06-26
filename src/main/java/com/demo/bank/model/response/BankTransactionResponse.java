@@ -54,7 +54,7 @@ public class BankTransactionResponse {
     public String toString() {
         return "BankTransactionResponse{" +
                 "accountName='" + accountName + '\'' +
-                ", accountNumber='" + "XXXXX" + accountNumber.substring(5,10)+ '\'' +
+                ", accountNumber='" + accountNumber+ '\'' +
                 ", amount=" + amount +
                 ", accountBalance=" + accountBalance +
                 ", transactionDate=" + transactionDate +

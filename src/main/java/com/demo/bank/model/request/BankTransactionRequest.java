@@ -9,10 +9,6 @@ import java.math.BigDecimal;
 
 public class BankTransactionRequest {
 
-    @NotBlank(message = "accountName is invalid")
-    @Pattern(regexp="^[A-Za-z ]*$",message = "accountName is invalid,please input alphabet")
-    private String accountName;
-
     @NotBlank(message = "accountNumber is invalid")
     @Pattern(regexp = "^[0-9]{10}$", message = "accountNumber is invalid,please input number with 10 digit numbers")
     private String accountNumber;
@@ -24,14 +20,6 @@ public class BankTransactionRequest {
             message = "amount is invalid,please input not more than 10 digits with 2 decimal places")
     private BigDecimal amount;
 
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public void setAccountName(String accountName) {
-        this.accountName = accountName;
-    }
 
     public String getAccountNumber() {
         return accountNumber;
@@ -52,8 +40,7 @@ public class BankTransactionRequest {
     @Override
     public String toString() {
         return "BankResponseDepositWithdrawTransaction{" +
-                "accountName='" + accountName + '\'' +
-                ", accountNumber='" + "XXXXX" + accountNumber.substring(5,10)+ '\'' +
+                ", accountNumber='" + accountNumber + '\'' +
                 ", amount=" + amount +
                 '}';
     }

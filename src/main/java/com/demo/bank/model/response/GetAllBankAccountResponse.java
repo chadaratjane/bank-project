@@ -44,7 +44,7 @@ public class GetAllBankAccountResponse {
     public String toString() {
         return "GetAllBankAccountResponse{" +
                 "accountName='" + accountName + '\'' +
-                ", accountNumber='" + "XXXXX" + accountNumber.substring(5,10)+ '\'' +
+                ", accountNumber='" + accountNumber+ '\'' +
                 ", branchName='" + branchName + '\'' +
                 ", accountBalance=" + accountBalance +
                 '}';

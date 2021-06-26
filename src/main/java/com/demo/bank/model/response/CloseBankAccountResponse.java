@@ -5,6 +5,7 @@ public class CloseBankAccountResponse {
     private String accountNumber;
     private String branchName;
     private String accountStatus;
+    private String accountBalance;
 
     public String getAccountName() {
         return accountName;
@@ -38,13 +39,22 @@ public class CloseBankAccountResponse {
         this.branchName = branchName;
     }
 
+    public String getAccountBalance() {
+        return accountBalance;
+    }
+
+    public void setAccountBalance(String accountBalance) {
+        this.accountBalance = accountBalance;
+    }
+
     @Override
     public String toString() {
         return "CloseBankAccountResponse{" +
                 "accountName='" + accountName + '\'' +
-                ", accountNumber='" + "XXXXX" + accountNumber.substring(5,10)+ '\'' +
+                ", accountNumber='" + accountNumber + '\'' +
                 ", branchName='" + branchName + '\'' +
                 ", accountStatus='" + accountStatus + '\'' +
+                ", accountBalance='" + accountBalance + '\'' +
                 '}';
     }
 }

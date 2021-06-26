@@ -3,6 +3,7 @@ package com.demo.bank.controller;
 import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.service.BankService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,7 @@ public class BankAccountController {
         return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
 
+    //TODO @Operation(summary = "Get a book by its id")
     @GetMapping(value = "/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> getAllBankAccount(){
         logger.info("START IMPLEMENTING LIST ALL BANK ACCOUNTS");

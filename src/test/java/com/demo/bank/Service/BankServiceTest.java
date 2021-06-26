@@ -194,7 +194,6 @@ public class BankServiceTest {
         updatedBankAccount.setAccountUpdatedDate(Calendar.getInstance().getTime());
 
         BankTransactionRequest bankTransactionRequest = new BankTransactionRequest();
-        bankTransactionRequest.setAccountName("MockAccountName");
         bankTransactionRequest.setAccountNumber("0123456789");
         bankTransactionRequest.setAmount(BigDecimal.valueOf(500));
 
@@ -228,7 +227,6 @@ public class BankServiceTest {
                 ("0123456789",AccountStatus.ACTIVATED.getValue())).thenReturn(null);
 
         BankTransactionRequest bankTransactionRequest = new BankTransactionRequest();
-        bankTransactionRequest.setAccountName("MockAccountName");
         bankTransactionRequest.setAccountNumber("0123456789");
         bankTransactionRequest.setAmount(BigDecimal.valueOf(500));
 
@@ -279,7 +277,6 @@ public class BankServiceTest {
         updatedBankAccount.setAccountUpdatedDate(Calendar.getInstance().getTime());
 
         BankTransactionRequest bankTransactionRequest = new BankTransactionRequest();
-        bankTransactionRequest.setAccountName("MockAccountName");
         bankTransactionRequest.setAccountNumber("0123456789");
         bankTransactionRequest.setAmount(BigDecimal.valueOf(500));
 
@@ -314,7 +311,6 @@ public class BankServiceTest {
                 ("0123456789",AccountStatus.ACTIVATED.getValue())).thenReturn(null);
 
         BankTransactionRequest bankTransactionRequest = new BankTransactionRequest();
-        bankTransactionRequest.setAccountName("MockAccountName");
         bankTransactionRequest.setAccountNumber("0123456789");
         bankTransactionRequest.setAmount(BigDecimal.valueOf(500));
 
@@ -400,7 +396,9 @@ public class BankServiceTest {
 
         assertEquals("SUCCESS", commonResponse.getStatus());
         assertEquals(HttpStatus.CREATED,commonResponse.getHttpStatus());
+        assertEquals(updatedSenderBankAccount.getAccountName(),bankTransferResponse.getSenderAccountName());
         assertEquals(updatedSenderBankAccount.getAccountNumber(),bankTransferResponse.getSenderAccountNumber());
+        assertEquals(updatedReceiverBankAccount.getAccountName(),bankTransferResponse.getReceiverAccountName());
         assertEquals(updatedReceiverBankAccount.getAccountNumber(),bankTransferResponse.getReceiverAccountNumber());
         assertEquals(bankTransactionsEntity.getTransactionAmount(),bankTransferResponse.getAmount());
         assertEquals(updatedSenderBankAccount.getAccountBalance(),bankTransferResponse.getSenderAccountBalance());
@@ -578,14 +576,12 @@ public class BankServiceTest {
         bankBranchesEntity1.setBranchId(1);
         bankBranchesEntity1.setBranchName("Mock Branch Name1");
         bankBranchesEntity1.setBranchCity("Mock City1");
-        bankBranchesEntity1.setBranchAsset(BigDecimal.valueOf(0));
         bankBranchesEntity1.setBranchCreatedDate(Calendar.getInstance().getTime());
 
         BankBranchesEntity bankBranchesEntity2 = new BankBranchesEntity();
         bankBranchesEntity2.setBranchId(2);
         bankBranchesEntity2.setBranchName("Mock Branch Name2");
         bankBranchesEntity2.setBranchCity("Mock City2");
-        bankBranchesEntity2.setBranchAsset(BigDecimal.valueOf(0));
         bankBranchesEntity2.setBranchCreatedDate(Calendar.getInstance().getTime());
 
         List<BankAccountsEntity> bankAccountsEntityList = new ArrayList<>();
@@ -720,8 +716,7 @@ public class BankServiceTest {
             if (getAllContentsResponseList.get(i).getTransactionType().equals("TRANSFER")) {
                 for (int j = 0; j < expectedReceiverBankAccountList.size(); j++) {
                     assertEquals(expectedReceiverBankAccountList.get(j).getAccountName(), getAllContentsResponseList.get(i).getReceiverAccountName());
-                    String receiverAccountNumber = "XXXXX" + expectedReceiverBankAccountList.get(j).getAccountNumber().substring(5, 10);
-                    assertEquals(receiverAccountNumber, getAllContentsResponseList.get(i).getReceiverAccountNumber());
+                    assertEquals(expectedReceiverBankAccountList.get(j).getAccountNumber(), getAllContentsResponseList.get(i).getReceiverAccountNumber());
                 }
             }
         }
@@ -815,8 +810,7 @@ public class BankServiceTest {
 
             if (getAllContentsResponseList.get(i).getTransactionType().equals("TRANSFER")) {
                 for (int j = 0; j < expectedReceiverBankAccountsList.size(); j++) {
-                    String receiverAccountNumber = "XXXXX" + expectedReceiverBankAccountsList.get(j).getAccountNumber().substring(5, 10);
-                    assertEquals(receiverAccountNumber, getAllContentsResponseList.get(i).getReceiverAccountNumber());
+                    assertEquals(expectedReceiverBankAccountsList.get(j).getAccountNumber(), getAllContentsResponseList.get(i).getReceiverAccountNumber());
                     assertEquals(expectedReceiverBankAccountsList.get(j).getAccountName(), getAllContentsResponseList.get(i).getReceiverAccountName());
                 }
             }
