@@ -272,7 +272,20 @@ public class BankService {
 
         if (bankAccountsEntity != null) {
             logger.info("BANK ACCOUNT FOUND");
-            //TODO add withdraw method step
+            BigDecimal receivedBalance = bankAccountsEntity.getAccountBalance();
+
+            if (receivedBalance.compareTo(BigDecimal.ZERO) > 0) {
+                BankTransactionsEntity bankTransactionsEntity = new BankTransactionsEntity();
+                bankTransactionsEntity.setTransactionId(UUID.randomUUID());
+                bankTransactionsEntity.setAccountId(bankAccountsEntity.getAccountId());
+                bankTransactionsEntity.setTransactionAmount(receivedBalance);
+                bankTransactionsEntity.setTransactionType(TransactionType.WITHDRAW.getValue());
+                bankTransactionsEntity.setTransactionDate(Calendar.getInstance().getTime());
+                bankTransactionsRepository.save(bankTransactionsEntity);
+                logger.info("WITHDRAW ACCOUNT BALANCE SUCCESSFULLY");
+
+            }
+
             BankAccountsEntity entity = prepareCloseBankAccountsEntity(bankAccountsEntity);
 
             BankAccountsEntity saveEntity = bankAccountsRepository.save(entity);
@@ -284,7 +297,7 @@ public class BankService {
             closeBankAccountResponse.setAccountNumber(saveEntity.getAccountNumber());
             BankBranchesEntity findBranchName = bankBranchesRepository.findAllByBranchId(saveEntity.getAccountBranchId());
             closeBankAccountResponse.setBranchName(findBranchName.getBranchName());
-            //TODO add response on return balance, how much they should receive
+            closeBankAccountResponse.setAccountBalance(receivedBalance);
             closeBankAccountResponse.setAccountStatus(saveEntity.getAccountStatus());
             commonResponse.setData(closeBankAccountResponse);
             commonResponse.setHttpStatus(HttpStatus.OK);
@@ -416,7 +429,7 @@ public class BankService {
         entity.setAccountBranchId(bankAccountsEntity.getAccountBranchId());
         entity.setAccountNumber(bankAccountsEntity.getAccountNumber());
         entity.setAccountName(bankAccountsEntity.getAccountName());
-        entity.setAccountBalance(bankAccountsEntity.getAccountBalance());
+        entity.setAccountBalance(BigDecimal.ZERO);
         entity.setAccountStatus(AccountStatus.DEACTIVATED.getValue());
         entity.setAccountCreatedDate(bankAccountsEntity.getAccountCreatedDate());
         entity.setAccountUpdatedDate(Calendar.getInstance().getTime());
