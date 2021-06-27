@@ -172,7 +172,9 @@ public class BankService {
         CommonResponse commonResponse = new CommonResponse();
         if (bankAccountsEntity != null) {
             logger.info("BANK ACCOUNT FOUND");
-            //TODO Add Error on withdraw amount > account balance
+            if (request.getAmount().compareTo(bankAccountsEntity.getAccountBalance())>0){
+            throw new ValidateException("WITHDRAW AMOUNT IS OVER ACCOUNT BALANCE","INSUFFICIENT ACCOUNT BALANCE");
+            }
 
             BankTransactionsEntity bankTransactionsEntity = prepareWithdrawTransactionEntity(request, bankAccountsEntity);
 
@@ -215,7 +217,9 @@ public class BankService {
         BankAccountsEntity senderBankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getSenderAccountNumber(), AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();
         if (senderBankAccountsEntity != null) {
-            //TODO Add Error on transfer amount > sender account balance
+            if (request.getAmount().compareTo(senderBankAccountsEntity.getAccountBalance())>0){
+                throw new ValidateException("TRANSFER AMOUNT IS OVER ACCOUNT BALANCE","INSUFFICIENT ACCOUNT BALANCE");
+            }
 
             BankAccountsEntity receiverBankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(request.getReceiverAccountNumber(), AccountStatus.ACTIVATED.getValue());
             if (receiverBankAccountsEntity != null) {

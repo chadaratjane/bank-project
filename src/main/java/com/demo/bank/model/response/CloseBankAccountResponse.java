@@ -1,11 +1,13 @@
 package com.demo.bank.model.response;
 
+import java.math.BigDecimal;
+
 public class CloseBankAccountResponse {
     private String accountName;
     private String accountNumber;
     private String branchName;
     private String accountStatus;
-    private String accountBalance;
+    private BigDecimal accountBalance;
 
     public String getAccountName() {
         return accountName;
@@ -39,11 +41,11 @@ public class CloseBankAccountResponse {
         this.branchName = branchName;
     }
 
-    public String getAccountBalance() {
+    public BigDecimal getAccountBalance() {
         return accountBalance;
     }
 
-    public void setAccountBalance(String accountBalance) {
+    public void setAccountBalance(BigDecimal accountBalance) {
         this.accountBalance = accountBalance;
     }
 
