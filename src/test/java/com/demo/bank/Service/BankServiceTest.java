@@ -1,4 +1,4 @@
-package com.demo.bank.Service;
+package com.demo.bank.service;
 
 import com.demo.bank.constant.AccountStatus;
 import com.demo.bank.model.entity.BankAccountsEntity;
@@ -20,7 +20,6 @@ import com.demo.bank.repository.BankAccountsRepository;
 import com.demo.bank.repository.BankBranchesRepository;
 import com.demo.bank.repository.BankTransactionsRepository;
 import com.demo.bank.repository.CustomerInformationRepository;
-import com.demo.bank.service.BankService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

@@ -43,6 +43,7 @@ public class BankAccountController {
     }
 
     //TODO @Operation(summary = "Get a book by its id")
+    //TODO ADD ACCOUNT STATUS ACTIVATED, DEACTIVATED, ALL
     @GetMapping(value = "/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> getAllBankAccount(){
         logger.info("START IMPLEMENTING LIST ALL BANK ACCOUNTS");
