@@ -478,6 +478,38 @@ public class BankServiceTest {
     }
 
     @Test
+    public void fail_transferTransaction_insufficientAccountBalance(){
+
+        BankAccountsEntity senderBankAccountsEntity = new BankAccountsEntity();
+        senderBankAccountsEntity.setAccountId(UUID.randomUUID());
+        senderBankAccountsEntity.setAccountBranchId(1);
+        senderBankAccountsEntity.setAccountName("MockSenderAccountName");
+        senderBankAccountsEntity.setAccountNumber("1111111111");
+        senderBankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        senderBankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date senderDate = Calendar.getInstance().getTime();
+        senderBankAccountsEntity.setAccountCreatedDate(senderDate);
+        senderBankAccountsEntity.setAccountUpdatedDate(senderDate);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                (anyString(),anyString())).thenReturn(senderBankAccountsEntity);
+
+        try{
+
+            BankTransferRequest bankTransferRequest = new BankTransferRequest();
+            bankTransferRequest.setSenderAccountNumber(senderBankAccountsEntity.getAccountNumber());
+            bankTransferRequest.setReceiverAccountNumber("2222222222");
+            bankTransferRequest.setAmount(BigDecimal.valueOf(500));
+
+            bankService.transferTransaction(bankTransferRequest);
+
+        }catch (ValidateException e){
+
+            assertEquals("INSUFFICIENT ACCOUNT BALANCE",e.getErrorMessage());
+
+        }
+    }
+
+    @Test
     public void fail_transferTransaction_notFoundSenderBankAccount(){
 
         BankAccountsEntity senderBankAccountsEntity = new BankAccountsEntity();
