@@ -581,7 +581,7 @@ public class BankServiceTest {
     }
 
     @Test
-    public void success_closeBankAccount(){
+    public void success_closeBankAccount_noAccountBalanceLeft(){
 
         BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
         bankAccountsEntity.setAccountId(UUID.randomUUID());
@@ -623,6 +623,61 @@ public class BankServiceTest {
         assertEquals(updatedBankAccount.getAccountNumber(),closeBankAccountResponse.getAccountNumber());
         assertEquals(updatedBankAccount.getAccountStatus(),closeBankAccountResponse.getAccountStatus());
         assertEquals(bankBranchesEntity.getBranchName(),closeBankAccountResponse.getBranchName());
+        assertEquals(updatedBankAccount.getAccountBalance(),closeBankAccountResponse.getAccountBalance());
+    }
+
+    @Test
+    public void success_closeBankAccount_haveAccountBalanceLeft(){
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountName("mockAccountName");
+        bankAccountsEntity.setAccountBalance(BigDecimal.valueOf(500));
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus
+                (anyString(),anyString())).thenReturn(bankAccountsEntity);
+
+        BankTransactionsEntity bankTransactionsEntity = new BankTransactionsEntity();
+        bankTransactionsEntity.setTransactionId(UUID.randomUUID());
+        bankTransactionsEntity.setAccountId(UUID.randomUUID());
+        bankTransactionsEntity.setTransactionAmount(BigDecimal.valueOf(500));
+        bankTransactionsEntity.setTransactionType("WITHDRAW");
+        bankTransactionsEntity.setTransactionDate(Calendar.getInstance().getTime());
+        Mockito.when(bankTransactionsRepository.save(any())).thenReturn(bankTransactionsEntity);
+
+        BankAccountsEntity updatedBankAccount = new BankAccountsEntity();
+        updatedBankAccount.setAccountId(bankAccountsEntity.getAccountId());
+        updatedBankAccount.setAccountBranchId(bankAccountsEntity.getAccountBranchId());
+        updatedBankAccount.setAccountNumber(bankAccountsEntity.getAccountNumber());
+        updatedBankAccount.setAccountName(bankAccountsEntity.getAccountName());
+        updatedBankAccount.setAccountBalance(BigDecimal.ZERO);
+        updatedBankAccount.setAccountStatus(AccountStatus.DEACTIVATED.getValue());
+        updatedBankAccount.setAccountCreatedDate(bankAccountsEntity.getAccountCreatedDate());
+        updatedBankAccount.setAccountUpdatedDate(Calendar.getInstance().getTime());
+        Mockito.when(bankAccountsRepository.save(any())).thenReturn(updatedBankAccount);
+
+        BankBranchesEntity bankBranchesEntity = new BankBranchesEntity();
+        bankBranchesEntity.setBranchId(1);
+        bankBranchesEntity.setBranchName("MockBranchName");
+        Mockito.when(bankBranchesRepository.findAllByBranchId(updatedBankAccount.getAccountBranchId()))
+                .thenReturn(bankBranchesEntity);
+
+        CommonResponse commonResponse = bankService.closeBankAccount(updatedBankAccount.getAccountNumber());
+
+        CloseBankAccountResponse closeBankAccountResponse = (CloseBankAccountResponse) commonResponse.getData();
+
+        assertEquals("SUCCESS",commonResponse.getStatus());
+        assertEquals(HttpStatus.OK,commonResponse.getHttpStatus());
+        assertEquals(updatedBankAccount.getAccountName(),closeBankAccountResponse.getAccountName());
+        assertEquals(updatedBankAccount.getAccountNumber(),closeBankAccountResponse.getAccountNumber());
+        assertEquals(updatedBankAccount.getAccountStatus(),closeBankAccountResponse.getAccountStatus());
+        assertEquals(bankBranchesEntity.getBranchName(),closeBankAccountResponse.getBranchName());
+        assertEquals(bankAccountsEntity.getAccountBalance(),closeBankAccountResponse.getAccountBalance());
 
     }
 
