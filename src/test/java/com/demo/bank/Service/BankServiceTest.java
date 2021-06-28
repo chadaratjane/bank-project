@@ -1,6 +1,7 @@
 package com.demo.bank.service;
 
 import com.demo.bank.constant.AccountStatus;
+import com.demo.bank.exception.ValidateException;
 import com.demo.bank.model.entity.BankAccountsEntity;
 import com.demo.bank.model.entity.BankBranchesEntity;
 import com.demo.bank.model.entity.BankTransactionsEntity;
@@ -247,7 +248,7 @@ public class BankServiceTest {
         bankAccountsEntity.setAccountBranchId(1);
         bankAccountsEntity.setAccountName("MockAccountName");
         bankAccountsEntity.setAccountNumber("0123456789");
-        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountBalance(BigDecimal.valueOf(500));
         bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
         Date date = Calendar.getInstance().getTime();
         bankAccountsEntity.setAccountCreatedDate(date);
@@ -294,6 +295,35 @@ public class BankServiceTest {
     }
 
     @Test
+    public void fail_withdrawTransaction_insufficientAccountBalance() {
+
+        BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
+        bankAccountsEntity.setAccountId(UUID.randomUUID());
+        bankAccountsEntity.setAccountBranchId(1);
+        bankAccountsEntity.setAccountName("MockAccountName");
+        bankAccountsEntity.setAccountNumber("0123456789");
+        bankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        bankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date date = Calendar.getInstance().getTime();
+        bankAccountsEntity.setAccountCreatedDate(date);
+        bankAccountsEntity.setAccountUpdatedDate(date);
+        Mockito.doReturn(bankAccountsEntity).when(bankAccountsRepository).findAllByAccountNumberAndAccountStatus(anyString(),anyString());
+
+        try {
+        BankTransactionRequest bankTransactionRequest = new BankTransactionRequest();
+        bankTransactionRequest.setAccountNumber("0123456789");
+        bankTransactionRequest.setAmount(BigDecimal.valueOf(500));
+
+        bankService.withdrawTransaction(bankTransactionRequest);
+
+        } catch (ValidateException e) {
+
+            assertEquals("INSUFFICIENT ACCOUNT BALANCE", e.getErrorMessage());
+        }
+    }
+
+
+    @Test
     public void fail_withdrawTransaction_notFoundBankAccount(){
 
         BankAccountsEntity bankAccountsEntity = new BankAccountsEntity();
@@ -331,7 +361,7 @@ public class BankServiceTest {
         senderBankAccountsEntity.setAccountBranchId(1);
         senderBankAccountsEntity.setAccountName("MockSenderAccountName");
         senderBankAccountsEntity.setAccountNumber("1111111111");
-        senderBankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        senderBankAccountsEntity.setAccountBalance(BigDecimal.valueOf(500));
         senderBankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
         Date senderDate = Calendar.getInstance().getTime();
         senderBankAccountsEntity.setAccountCreatedDate(senderDate);
@@ -442,7 +472,7 @@ public class BankServiceTest {
         senderBankAccountsEntity.setAccountBranchId(1);
         senderBankAccountsEntity.setAccountName("MockSenderAccountName");
         senderBankAccountsEntity.setAccountNumber("1111111111");
-        senderBankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        senderBankAccountsEntity.setAccountBalance(BigDecimal.valueOf(500));
         senderBankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
         Date senderDate = Calendar.getInstance().getTime();
         senderBankAccountsEntity.setAccountCreatedDate(senderDate);
@@ -464,6 +494,7 @@ public class BankServiceTest {
         BankTransferRequest bankTransferRequest = new BankTransferRequest();
         bankTransferRequest.setSenderAccountNumber(senderBankAccountsEntity.getAccountNumber());
         bankTransferRequest.setReceiverAccountNumber(receiverBankAccountsEntity.getAccountNumber());
+        bankTransferRequest.setAmount(BigDecimal.valueOf(500));
 
         CommonResponse commonResponse = bankService.transferTransaction(bankTransferRequest);
 
