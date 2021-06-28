@@ -307,9 +307,10 @@ public class BankServiceTest {
         Date date = Calendar.getInstance().getTime();
         bankAccountsEntity.setAccountCreatedDate(date);
         bankAccountsEntity.setAccountUpdatedDate(date);
-        Mockito.doReturn(bankAccountsEntity).when(bankAccountsRepository).findAllByAccountNumberAndAccountStatus(anyString(),anyString());
+        Mockito.when(bankAccountsRepository.findAllByAccountNumberAndAccountStatus(anyString(),anyString())).thenReturn(bankAccountsEntity);
 
         try {
+
         BankTransactionRequest bankTransactionRequest = new BankTransactionRequest();
         bankTransactionRequest.setAccountNumber("0123456789");
         bankTransactionRequest.setAmount(BigDecimal.valueOf(500));
@@ -321,7 +322,6 @@ public class BankServiceTest {
             assertEquals("INSUFFICIENT ACCOUNT BALANCE", e.getErrorMessage());
         }
     }
-
 
     @Test
     public void fail_withdrawTransaction_notFoundBankAccount(){
