@@ -436,6 +436,48 @@ public class BankServiceTest {
     }
 
     @Test
+    public void fail_transferTransaction_duplicateSenderReceiverBankAccount(){
+
+        BankAccountsEntity senderBankAccountsEntity = new BankAccountsEntity();
+        senderBankAccountsEntity.setAccountId(UUID.randomUUID());
+        senderBankAccountsEntity.setAccountBranchId(1);
+        senderBankAccountsEntity.setAccountName("MockSenderAccountName");
+        senderBankAccountsEntity.setAccountNumber("1111111111");
+        senderBankAccountsEntity.setAccountBalance(BigDecimal.valueOf(500));
+        senderBankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date senderDate = Calendar.getInstance().getTime();
+        senderBankAccountsEntity.setAccountCreatedDate(senderDate);
+        senderBankAccountsEntity.setAccountUpdatedDate(senderDate);
+
+        BankAccountsEntity receiverBankAccountsEntity = new BankAccountsEntity();
+        receiverBankAccountsEntity.setAccountId(UUID.randomUUID());
+        receiverBankAccountsEntity.setAccountBranchId(2);
+        receiverBankAccountsEntity.setAccountName("MockReceiverAccountName");
+        receiverBankAccountsEntity.setAccountNumber("1111111111");
+        receiverBankAccountsEntity.setAccountBalance(BigDecimal.ZERO);
+        receiverBankAccountsEntity.setAccountStatus(AccountStatus.ACTIVATED.getValue());
+        Date receiverDate = Calendar.getInstance().getTime();
+        receiverBankAccountsEntity.setAccountCreatedDate(receiverDate);
+        receiverBankAccountsEntity.setAccountUpdatedDate(receiverDate);
+
+        try{
+
+            BankTransferRequest bankTransferRequest = new BankTransferRequest();
+            bankTransferRequest.setSenderAccountNumber(senderBankAccountsEntity.getAccountNumber());
+            bankTransferRequest.setReceiverAccountNumber(receiverBankAccountsEntity.getAccountNumber());
+            bankTransferRequest.setAmount(BigDecimal.valueOf(500));
+
+            bankService.transferTransaction(bankTransferRequest);
+
+        }catch (ValidateException e){
+
+            assertEquals("DUPLICATE SENDER AND RECEIVER BANK ACCOUNT",e.getErrorMessage());
+
+        }
+
+    }
+
+    @Test
     public void fail_transferTransaction_notFoundSenderBankAccount(){
 
         BankAccountsEntity senderBankAccountsEntity = new BankAccountsEntity();
