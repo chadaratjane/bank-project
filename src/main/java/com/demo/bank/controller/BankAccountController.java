@@ -31,6 +31,7 @@ public class BankAccountController {
     @Autowired
     private BankService bankService;
 
+    @Operation(summary = "Open bank account")
     @PostMapping(value = "/accounts",produces = MediaType.APPLICATION_JSON_VALUE,consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> openBankAccount (@Valid @RequestBody OpenBankAccountRequest request){
         logger.info("START IMPLEMENTING OPEN BANK ACCOUNT, branchName : {}", request.getBranchName());
@@ -39,6 +40,7 @@ public class BankAccountController {
         return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
 
+    @Operation(summary = "Close bank account")
     @DeleteMapping(value = "/accounts/{accountNumber}/deactivated", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> closeBankAccount(@PathVariable("accountNumber") String accountNumber) {
         logger.info("START IMPLEMENTING CLOSE BANK ACCOUNT");
@@ -47,7 +49,7 @@ public class BankAccountController {
         return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
 
-    //TODO @Operation(summary = "Get a book by its id")
+    @Operation(summary = "Get all bank account by account status")
     @GetMapping(value = "/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> getAllBankAccount(
             @RequestParam(value = "accountStatus",required = false,defaultValue = "ALL") String accountStatus){

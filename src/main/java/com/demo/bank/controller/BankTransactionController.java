@@ -7,6 +7,7 @@ import com.demo.bank.model.request.BankTransferRequest;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.service.BankService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +35,7 @@ public class BankTransactionController {
     @Autowired
     private BankService bankService;
 
+    @Operation(summary = "Deposit transaction")
     @PostMapping(value = "/transactions/deposit", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> depositTransaction(@Valid @RequestBody BankTransactionRequest request) {
         logger.info("START IMPLEMENTING DEPOSIT TRANSACTION, transactionRequest : {}", request);
@@ -42,6 +44,7 @@ public class BankTransactionController {
         return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
     }
 
+    @Operation(summary = "Withdraw transaction")
     @PostMapping(value = "/transactions/withdraw", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> withdrawTransaction(@Valid @RequestBody BankTransactionRequest request) {
         logger.info("START IMPLEMENTING WITHDRAW TRANSACTION, transactionRequest : {}", request);
@@ -50,6 +53,7 @@ public class BankTransactionController {
         return new ResponseEntity<>(commonResponse, commonResponse.getHttpStatus());
     }
 
+    @Operation(summary = "Transfer transaction")
     @PostMapping(value = "/transactions/transfer",produces = MediaType.APPLICATION_JSON_VALUE,consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> transferTransaction(@Valid @RequestBody BankTransferRequest request){
         logger.info("START IMPLEMENTING TRANSFER TRANSACTION, bankTransferRequest : {}", request);
@@ -58,6 +62,7 @@ public class BankTransactionController {
         return new ResponseEntity<>(commonResponse, commonResponse.getHttpStatus());
     }
 
+    @Operation(summary = "Get all transaction by its account number")
     @GetMapping(value = "/transactions/{accountNumber}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> getAllTransaction(@PathVariable("accountNumber") String accountNumber,
                                                             @RequestParam(value = "dateFrom", required = false) String dateFromStr,
