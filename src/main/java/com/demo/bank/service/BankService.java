@@ -342,6 +342,7 @@ public class BankService {
                 BankBranchesEntity bankBranchesEntity = bankBranchesRepository.findAllByBranchId(tran.getAccountBranchId());
                 item.setBranchName(bankBranchesEntity.getBranchName());
                 item.setAccountBalance(tran.getAccountBalance());
+                item.setAccountStatus(tran.getAccountStatus());
                 list.add(item);
             }
             commonResponse.setData(list);

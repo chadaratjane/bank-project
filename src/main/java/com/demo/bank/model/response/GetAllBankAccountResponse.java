@@ -7,7 +7,7 @@ public class GetAllBankAccountResponse {
     private String accountNumber;
     private String branchName;
     private BigDecimal accountBalance;
-    //TODO add accountStatus = DEAC ,AC
+    private String accountStatus;
 
     public String getAccountName() {
         return accountName;
@@ -41,13 +41,22 @@ public class GetAllBankAccountResponse {
         this.accountBalance = accountBalance;
     }
 
+    public String getAccountStatus() {
+        return accountStatus;
+    }
+
+    public void setAccountStatus(String accountStatus) {
+        this.accountStatus = accountStatus;
+    }
+
     @Override
     public String toString() {
         return "GetAllBankAccountResponse{" +
                 "accountName='" + accountName + '\'' +
-                ", accountNumber='" + accountNumber+ '\'' +
+                ", accountNumber='" + accountNumber + '\'' +
                 ", branchName='" + branchName + '\'' +
                 ", accountBalance=" + accountBalance +
+                ", accountStatus='" + accountStatus + '\'' +
                 '}';
     }
 }
