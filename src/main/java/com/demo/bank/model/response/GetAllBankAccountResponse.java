@@ -7,6 +7,7 @@ public class GetAllBankAccountResponse {
     private String accountNumber;
     private String branchName;
     private BigDecimal accountBalance;
+    //TODO add accountStatus = DEAC ,AC
 
     public String getAccountName() {
         return accountName;

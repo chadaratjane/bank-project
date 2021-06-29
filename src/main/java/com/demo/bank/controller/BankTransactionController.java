@@ -76,6 +76,7 @@ public class BankTransactionController {
 
         if (!"ASC".equalsIgnoreCase(sort) && !"DESC".equalsIgnoreCase(sort)) {
             logger.error("VALIDATION FAILED, sort : {}", sort);
+            //TODO throw validateException
             CommonResponse commonResponse = new CommonResponse();
             commonResponse.setStatus(Status.ERROR.getValue());
             ErrorResponse errorResponse = new ErrorResponse();

@@ -314,8 +314,17 @@ public class BankService {
         return commonResponse;
     }
 
-    public CommonResponse getAllBankAccount() {
-        List<BankAccountsEntity> bankAccountsEntityList = bankAccountsRepository.findAllByAccountStatus(AccountStatus.ACTIVATED.getValue());
+    public CommonResponse getAllBankAccount(String accountStatus) {
+
+        List<BankAccountsEntity> bankAccountsEntityList;
+        if ("ALL".equals(accountStatus)) {
+
+            bankAccountsEntityList = bankAccountsRepository.findAll();
+        } else {
+
+            bankAccountsEntityList = bankAccountsRepository.findAllByAccountStatus(accountStatus);
+        }
+
         ArrayList<GetAllBankAccountResponse> list = new ArrayList<>();
         CommonResponse commonResponse = new CommonResponse();
         commonResponse.setStatus(Status.SUCCESS.getValue());
@@ -340,8 +349,7 @@ public class BankService {
         return commonResponse;
     }
 
-    public CommonResponse getAllTransaction(String accountNumber, Date dateFrom, Date dateTo, String sort, Integer pageNumber, Integer perPage)
-    {
+    public CommonResponse getAllTransaction(String accountNumber, Date dateFrom, Date dateTo, String sort, Integer pageNumber, Integer perPage) {
         BankAccountsEntity bankAccountsEntity = bankAccountsRepository.findAllByAccountNumberAndAccountStatus(
                 accountNumber, AccountStatus.ACTIVATED.getValue());
         CommonResponse commonResponse = new CommonResponse();

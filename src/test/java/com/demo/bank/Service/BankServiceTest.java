@@ -753,7 +753,7 @@ public class BankServiceTest {
         bankBranchesEntityList.add(bankBranchesEntity2);
         Mockito.doReturn(bankBranchesEntity1,bankBranchesEntity2).when(bankBranchesRepository).findAllByBranchId(any());
 
-        CommonResponse commonResponse = bankService.getAllBankAccount();
+        CommonResponse commonResponse = bankService.getAllBankAccount(AccountStatus.ACTIVATED.getValue());
 
         List<GetAllBankAccountResponse> getAllResponseList =  (List<GetAllBankAccountResponse>) commonResponse.getData();
 
@@ -778,7 +778,7 @@ public class BankServiceTest {
 
         Mockito.when(bankAccountsRepository.findAllByAccountStatus(any())).thenReturn(null);
 
-        CommonResponse commonResponse = bankService.getAllBankAccount();
+        CommonResponse commonResponse = bankService.getAllBankAccount(AccountStatus.ACTIVATED.getValue());
 
         List<GetAllBankAccountResponse> getAllBankAccountResponseList = (List<GetAllBankAccountResponse>) commonResponse.getData();
 
