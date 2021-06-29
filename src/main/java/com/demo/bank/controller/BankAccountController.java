@@ -1,6 +1,7 @@
 package com.demo.bank.controller;
 
 import com.demo.bank.constant.Status;
+import com.demo.bank.exception.ValidateException;
 import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.CommonResponse;
 import com.demo.bank.model.response.ErrorResponse;
@@ -47,7 +48,6 @@ public class BankAccountController {
     }
 
     //TODO @Operation(summary = "Get a book by its id")
-    //TODO ADD ACCOUNT STATUS ACTIVATED, DEACTIVATED, ALL
     @GetMapping(value = "/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> getAllBankAccount(
             @RequestParam(value = "accountStatus",required = false,defaultValue = "ALL") String accountStatus){
@@ -55,15 +55,9 @@ public class BankAccountController {
         logger.info("START IMPLEMENTING LIST ALL BANK ACCOUNTS");
 
         if (!"ACTIVATED".equalsIgnoreCase(accountStatus) && !"DEACTIVATED".equalsIgnoreCase(accountStatus) && !"ALL".equalsIgnoreCase(accountStatus)) {
-            //TODO throw validateException
             logger.error("VALIDATION FAILED, sort : {}", accountStatus);
-            CommonResponse commonResponse = new CommonResponse();
-            commonResponse.setStatus(Status.ERROR.getValue());
-            ErrorResponse errorResponse = new ErrorResponse();
-            errorResponse.setError("accountStatus is invalid : only ACTIVATED , DEACTIVATED and ALL accepted");
-            commonResponse.setData(errorResponse);
-            commonResponse.setHttpStatus(HttpStatus.BAD_REQUEST);
-            return new ResponseEntity<>(commonResponse, commonResponse.getHttpStatus());
+            throw new ValidateException("ACCOUNT STATUS IS INVALID", "ACCOUNT STATUS IS INVALID : ONLY [ACTIVATED] , [DEACTIVATED] AND [ALL] ACCEPTED");
+
         }
 
         CommonResponse commonResponse = bankService.getAllBankAccount(accountStatus.toUpperCase());

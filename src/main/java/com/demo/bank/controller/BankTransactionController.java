@@ -76,14 +76,8 @@ public class BankTransactionController {
 
         if (!"ASC".equalsIgnoreCase(sort) && !"DESC".equalsIgnoreCase(sort)) {
             logger.error("VALIDATION FAILED, sort : {}", sort);
-            //TODO throw validateException
-            CommonResponse commonResponse = new CommonResponse();
-            commonResponse.setStatus(Status.ERROR.getValue());
-            ErrorResponse errorResponse = new ErrorResponse();
-            errorResponse.setError("sort is invalid, only ASC and DESC accepted");
-            commonResponse.setData(errorResponse);
-            commonResponse.setHttpStatus(HttpStatus.BAD_REQUEST);
-            return new ResponseEntity<>(commonResponse, commonResponse.getHttpStatus());
+            throw new ValidateException("SORT IS INVALID","SORT IS INVALID : ONLY [ASC] AND [DESC] ACCEPTED");
+
         }
 
         CommonResponse commonResponse = bankService.getAllTransaction(accountNumber, dateFrom, dateTo, sort,pageNumber,perPage);
