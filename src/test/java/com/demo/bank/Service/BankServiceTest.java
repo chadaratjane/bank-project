@@ -34,6 +34,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -68,7 +69,7 @@ public class BankServiceTest {
     }
 
     @Test
-    public void success_openBankAccount() {
+    public void success_openBankAccount() throws ParseException {
 
         BankBranchesEntity bankBranchesEntity = new BankBranchesEntity();
         Integer resultBranchId = new Random().nextInt(10);
@@ -92,6 +93,8 @@ public class BankServiceTest {
         OpenBankAccountRequest openBankAccountRequest = new OpenBankAccountRequest();
         openBankAccountRequest.setName("mockAccountName");
         openBankAccountRequest.setBranchName(bankBranchesEntity.getBranchName());
+        openBankAccountRequest.setAddress("Mock address");
+        openBankAccountRequest.setDateOfBirth("26-07-1994");
 
         CommonResponse commonResponse = bankService.openBankAccount(openBankAccountRequest);
 
@@ -106,7 +109,7 @@ public class BankServiceTest {
     }
 
     @Test
-    public void fail_openBankAccount_duplicateAccountNumber(){
+    public void fail_openBankAccount_duplicateAccountNumber() throws ParseException {
 
         BankBranchesEntity bankBranchesEntity = new BankBranchesEntity();
         Integer resultBranchId = new Random().nextInt(10);
@@ -138,7 +141,7 @@ public class BankServiceTest {
     }
 
     @Test
-    public void fail_openBankAccount_notFoundBranchName(){
+    public void fail_openBankAccount_notFoundBranchName() throws ParseException {
 
         BankBranchesEntity bankBranchesEntity = new BankBranchesEntity();
         bankBranchesEntity.setBranchName("MockBranchName");

@@ -3,6 +3,7 @@ package com.demo.bank.model.entity;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import java.util.Date;
 import java.util.UUID;
 
 @Entity(name ="customer_information")
@@ -16,7 +17,7 @@ public class CustomerInformationEntity {
     private String customerName;
 
     @Column(name = "customer_date_of_birth")
-    private String customerDateOfBirth;
+    private Date customerDateOfBirth;
 
     @Column(name = "customer_address")
     private String customerAddress;
@@ -37,11 +38,11 @@ public class CustomerInformationEntity {
         this.customerName = customerName;
     }
 
-    public String getCustomerDateOfBirth() {
+    public Date getCustomerDateOfBirth() {
         return customerDateOfBirth;
     }
 
-    public void setCustomerDateOfBirth(String customerDateOfBirth) {
+    public void setCustomerDateOfBirth(Date customerDateOfBirth) {
         this.customerDateOfBirth = customerDateOfBirth;
     }
 

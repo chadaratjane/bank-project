@@ -38,6 +38,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -66,7 +68,7 @@ public class BankService {
     private static final String ACCOUNT_NOTFOUND_ERROR = "BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS";
 
     @Transactional(rollbackFor = {Exception.class})
-    public CommonResponse openBankAccount(OpenBankAccountRequest request) {
+    public CommonResponse openBankAccount(OpenBankAccountRequest request) throws ParseException {
         BankBranchesEntity findBranch = bankBranchesRepository.findAllByBranchName(request.getBranchName());
         CommonResponse commonResponse = new CommonResponse();
 
@@ -111,7 +113,9 @@ public class BankService {
                 UUID id = UUID.randomUUID();
                 customerInformationEntity.setCustomerId(id);
                 customerInformationEntity.setCustomerName(saveEntity.getAccountName());
-                customerInformationEntity.setCustomerDateOfBirth(request.getDateOfBirth());
+                SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy");
+                Date dob = formatter.parse(request.getDateOfBirth());
+                customerInformationEntity.setCustomerDateOfBirth(dob);
                 customerInformationEntity.setCustomerAddress(request.getAddress());
                 customerInformationRepository.save(customerInformationEntity);
             }

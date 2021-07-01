@@ -1,10 +1,13 @@
 package com.demo.bank.model.response;
 
+import com.demo.bank.constant.Status;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.http.HttpStatus;
 
 public class CommonResponse {
 
+    @Schema(implementation = Status.class)
     private String status;
     private Object data;
     @JsonIgnore

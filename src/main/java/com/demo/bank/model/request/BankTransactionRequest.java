@@ -1,5 +1,7 @@
 package com.demo.bank.model.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotBlank;
@@ -11,6 +13,7 @@ public class BankTransactionRequest {
 
     @NotBlank(message = "accountNumber is invalid")
     @Pattern(regexp = "^[0-9]{10}$", message = "accountNumber is invalid,please input number with 10 digit numbers")
+    @Schema(example = "0123456789")
     private String accountNumber;
 
     @NotNull(message = "amount is invalid")
@@ -18,6 +21,7 @@ public class BankTransactionRequest {
             message = "amount is invalid,please input positive amount")
     @Digits(integer = 10, fraction = 2,
             message = "amount is invalid,please input not more than 10 digits with 2 decimal places")
+    @Schema(example = "20")
     private BigDecimal amount;
 
 

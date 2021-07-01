@@ -1,16 +1,16 @@
 package com.demo.bank.controller;
 
-import com.demo.bank.constant.Status;
 import com.demo.bank.exception.ValidateException;
 import com.demo.bank.model.request.OpenBankAccountRequest;
 import com.demo.bank.model.response.CommonResponse;
-import com.demo.bank.model.response.ErrorResponse;
 import com.demo.bank.service.BankService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
+import java.text.ParseException;
 
 @RestController
 public class BankAccountController {
@@ -32,17 +33,32 @@ public class BankAccountController {
     private BankService bankService;
 
     @Operation(summary = "Open bank account")
-    @PostMapping(value = "/accounts",produces = MediaType.APPLICATION_JSON_VALUE,consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CommonResponse> openBankAccount (@Valid @RequestBody OpenBankAccountRequest request){
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201",description = "OPEN SUCCESSFULLY"),
+            @ApiResponse(responseCode = "400",description = "VALIDATE FAILED"),
+            @ApiResponse(responseCode = "404",description = "DATA NOT FOUND"),
+            @ApiResponse(responseCode = "500",description = "INTERNAL SERVER ERROR")
+    })
+    @PostMapping(value = "/accounts", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CommonResponse> openBankAccount(@Valid @RequestBody OpenBankAccountRequest request) throws ParseException {
         logger.info("START IMPLEMENTING OPEN BANK ACCOUNT, branchName : {}", request.getBranchName());
-       CommonResponse commonResponse = bankService.openBankAccount(request);
+
+        CommonResponse commonResponse = bankService.openBankAccount(request);
         logger.info("END IMPLEMENTING OPEN BANK ACCOUNT, response : {}", commonResponse);
-        return new ResponseEntity<>(commonResponse,commonResponse.getHttpStatus());
+        return new ResponseEntity<>(commonResponse, commonResponse.getHttpStatus());
     }
 
     @Operation(summary = "Close bank account")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",description = "CLOSE SUCCESSFULLY"),
+            @ApiResponse(responseCode = "400",description = "VALIDATE FAILED"),
+            @ApiResponse(responseCode = "404",description = "DATA NOT FOUND"),
+            @ApiResponse(responseCode = "500",description = "INTERNAL SERVER ERROR")
+    })
     @DeleteMapping(value = "/accounts/{accountNumber}/deactivated", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CommonResponse> closeBankAccount(@PathVariable("accountNumber") String accountNumber) {
+    public ResponseEntity<CommonResponse> closeBankAccount(
+            @Parameter(example = "0123456789")
+            @PathVariable("accountNumber") String accountNumber) {
         logger.info("START IMPLEMENTING CLOSE BANK ACCOUNT");
         CommonResponse commonResponse = bankService.closeBankAccount(accountNumber);
         logger.info("END IMPLEMENTING CLOSE BANK ACCOUNT, response : {}",commonResponse);
@@ -50,6 +66,12 @@ public class BankAccountController {
     }
 
     @Operation(summary = "Get all bank account by account status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",description = "RETRIEVE SUCCESSFULLY"),
+            @ApiResponse(responseCode = "400",description = "VALIDATE FAILED"),
+            @ApiResponse(responseCode = "404",description = "DATA NOT FOUND"),
+            @ApiResponse(responseCode = "500",description = "INTERNAL SERVER ERROR")
+    })
     @GetMapping(value = "/accounts", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse> getAllBankAccount(
             @RequestParam(value = "accountStatus",required = false,defaultValue = "ALL") String accountStatus){
