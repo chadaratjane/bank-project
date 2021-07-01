@@ -1,0 +1,374 @@
+openapi: 3.0.1
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+  - url: 'http://localhost:8080/api/banks'
+    description: Generated server url
+paths:
+  '/accounts/{accountNumber}/deactivated':
+    delete:
+      tags:
+        - bank-account-controller
+      summary: Close bank account
+      operationId: closeBankAccount
+      parameters:
+        - name: accountNumber
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 0123456789
+      responses:
+        '200':
+          description: CLOSE SUCCESSFULLY
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '400':
+          description: VALIDATE FAILED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '404':
+          description: DATA NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '500':
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+  /accounts:
+    get:
+      tags:
+        - bank-account-controller
+      summary: Get all bank account by account status
+      operationId: getAllBankAccount
+      parameters:
+        - name: accountStatus
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ALL
+      responses:
+        '200':
+          description: RETRIEVE SUCCESSFULLY
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '400':
+          description: VALIDATE FAILED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '404':
+          description: DATA NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '500':
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+    post:
+      tags:
+        - bank-account-controller
+      summary: Open bank account
+      operationId: openBankAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenBankAccountRequest'
+      responses:
+        '201':
+          description: OPEN SUCCESSFULLY
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '400':
+          description: VALIDATE FAILED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '404':
+          description: DATA NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '500':
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+  /transactions/withdraw:
+    post:
+      tags:
+        - bank-transaction-controller
+      summary: Withdraw transaction
+      operationId: withdrawTransaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankTransactionRequest'
+      responses:
+        '201':
+          description: WITHDRAW SUCCESSFULLY
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '400':
+          description: VALIDATE FAILED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '404':
+          description: DATA NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '500':
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+  /transactions/transfer:
+    post:
+      tags:
+        - bank-transaction-controller
+      summary: Transfer transaction
+      operationId: transferTransaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankTransferRequest'
+      responses:
+        '201':
+          description: TRANSFER SUCCESSFULLY
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '400':
+          description: VALIDATE FAILED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '404':
+          description: DATA NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '500':
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+  /transactions/deposit:
+    post:
+      tags:
+        - bank-transaction-controller
+      summary: Deposit transaction
+      operationId: depositTransaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankTransactionRequest'
+      responses:
+        '201':
+          description: DEPOSIT SUCCESSFULLY
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '400':
+          description: VALIDATE FAILED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '404':
+          description: DATA NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '500':
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+  '/transactions/{accountNumber}':
+    get:
+      tags:
+        - bank-transaction-controller
+      summary: Get all transaction by its account number
+      operationId: getAllTransaction
+      parameters:
+        - name: accountNumber
+          in: path
+          required: true
+          schema:
+            type: string
+          example: 0123456789
+        - name: dateFrom
+          in: query
+          description: dd-MM-yyyy
+          required: false
+          schema:
+            type: string
+          example: 21-12-2021
+        - name: dateTo
+          in: query
+          description: dd-MM-yyyy
+          required: false
+          schema:
+            type: string
+          example: 31-12-2021
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            default: DESC
+        - name: pageNumber
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 1
+        - name: perPage
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 10
+      responses:
+        '200':
+          description: RETRIEVE SUCCESSFULLY
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '400':
+          description: VALIDATE FAILED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '404':
+          description: DATA NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+        '500':
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonResponse'
+components:
+  schemas:
+    CommonResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - SUCCESS
+            - ERROR
+            - NOT_FOUND
+            - INTERNAL_SERVER_ERROR
+            - BAD_REQUEST
+            - DATA_ACCESS_FAILED
+        data:
+          type: object
+    OpenBankAccountRequest:
+      required:
+        - address
+        - branchName
+        - dateOfBirth
+        - name
+      type: object
+      properties:
+        name:
+          pattern: '^[A-Za-z- ]*$'
+          type: string
+          example: Frank Gizzy
+        address:
+          pattern: '^[A-Za-z- ]*$'
+          type: string
+          example: Bangkok
+        dateOfBirth:
+          pattern: '^([0-9]{2})-([0-9]{2})-([0-9]{4})$'
+          type: string
+          example: 21-08-1996
+        branchName:
+          pattern: '^[A-Za-z- ]*$'
+          type: string
+          example: Silom
+    BankTransactionRequest:
+      required:
+        - accountNumber
+        - amount
+      type: object
+      properties:
+        accountNumber:
+          pattern: '^[0-9]{10}$'
+          type: string
+          example: 0123456789
+        amount:
+          minimum: 0
+          exclusiveMinimum: true
+          type: number
+          example: 20
+    BankTransferRequest:
+      required:
+        - amount
+        - receiverAccountNumber
+        - senderAccountNumber
+      type: object
+      properties:
+        senderAccountNumber:
+          pattern: '^[0-9]{10}$'
+          type: string
+          example: 0123456789
+        receiverAccountNumber:
+          pattern: '^[0-9]{10}$'
+          type: string
+          example: '9876543210'
+        amount:
+          minimum: 0
+          exclusiveMinimum: true
+          type: number
+          example: 20
