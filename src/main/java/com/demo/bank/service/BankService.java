@@ -334,7 +334,7 @@ public class BankService {
         commonResponse.setStatus(Status.SUCCESS.getValue());
         commonResponse.setHttpStatus(HttpStatus.OK);
         if (CollectionUtils.isEmpty(bankAccountsEntityList)) {
-            logger.info("NO BANK ACCOUNT TO RETRIEVE");
+            logger.error("NO BANK ACCOUNT TO RETRIEVE");
             commonResponse.setData(new ArrayList<GetAllBankAccountResponse>());
 
         } else {
@@ -377,7 +377,7 @@ public class BankService {
             commonResponse.setStatus(Status.SUCCESS.getValue());
             commonResponse.setHttpStatus(HttpStatus.OK);
             if (!pageResult.hasContent()) {
-                logger.info("NO TRANSACTION TO RETRIEVE");
+                logger.error("NO TRANSACTION TO RETRIEVE");
                 GetAllTransactionPageResponse getAllTransactionPageResponse = new GetAllTransactionPageResponse();
                 getAllTransactionPageResponse.setTotalItem(Long.valueOf(pageResult.getTotalElements()).intValue());
                 getAllTransactionPageResponse.setTotalPage(pageResult.getTotalPages());
@@ -412,7 +412,7 @@ public class BankService {
             }
 
         } else {
-            logger.info("BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS");
+            logger.error("BANK ACCOUNT NOT FOUND OR INVALID ACCOUNT STATUS");
             commonResponse.setStatus(Status.NOT_FOUND.getValue());
             ErrorResponse errorResponse = new ErrorResponse();
             errorResponse.setError(ACCOUNT_NOTFOUND_ERROR);
